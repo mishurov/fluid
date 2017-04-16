@@ -1,0 +1,14 @@
+*.iml
+.gradle
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+/distribution/png
+/app/build
+/gen-libs/build
+/gen-libs/src/main/cpp/png/platform_external_libpng
+*.swp

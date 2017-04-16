@@ -1,0 +1,2 @@
+//include ':gen-libs'
+include ':app'

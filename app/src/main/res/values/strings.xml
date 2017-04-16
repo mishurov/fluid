@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Fluids</string>
+
+    <string name="pref_grid_title">Grid</string>
+    <string name="pref_grid_summary">Density of the simulation grid</string>
+    <string name="pref_grid_default">1</string>
+
+    <string name="pref_method_title">Method</string>
+    <string name="pref_method_summary">A numerical method for the PDE</string>
+    <string name="pref_method_default">1</string>
+</resources>

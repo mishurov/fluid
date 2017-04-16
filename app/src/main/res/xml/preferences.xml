@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <ListPreference 
+        android:key="pref_grid"
+        android:title="@string/pref_grid_title"
+        android:summary="@string/pref_grid_summary"
+        android:entries="@array/pref_grid_entries"
+        android:entryValues="@array/pref_grid_values"
+        android:defaultValue="@string/pref_grid_default" />
+    <ListPreference 
+        android:key="pref_method"
+        android:title="@string/pref_method_title"
+        android:summary="@string/pref_method_summary"
+        android:entries="@array/pref_method_entries"
+        android:entryValues="@array/pref_method_values"
+        android:defaultValue="@string/pref_method_default" />
+</PreferenceScreen>

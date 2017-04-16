@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_grid_entries">
+        <item>Sparse</item>
+        <item>Medium</item>
+        <item>Dense</item>
+    </string-array>
+    <string-array name="pref_grid_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
+    <string-array name="pref_method_entries">
+        <item>Jacobi</item>
+        <item>Jacobi RenderScript</item>
+        <item>FFT</item>
+    </string-array>
+    <string-array name="pref_method_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+</resources>
