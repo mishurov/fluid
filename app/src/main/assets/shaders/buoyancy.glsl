@@ -30,7 +30,7 @@ void main()
     if (T > ambient_temperature) {
         //float D = texelFetch(Density, TC, 0).x;
         float D = texture2D(density, uv).x;
-        V += (dt * (T - ambient_temperature) * sigma - D * kappa ) * vec2(0, 1);
+        V += (dt * px1 * (T - ambient_temperature) * sigma - D * kappa ) * vec2(0, 1);
         gl_FragColor = vec4(V.x, V.y, 1.0, 1.0);
     }
 }
