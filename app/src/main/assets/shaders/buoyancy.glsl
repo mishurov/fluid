@@ -8,6 +8,7 @@ uniform float dt; // TimeStep
 uniform float px1;
 uniform float sigma;
 uniform float kappa;
+uniform vec2 gravity;
 
 varying vec2 uv;
 
@@ -30,7 +31,8 @@ void main()
     if (T > ambient_temperature) {
         //float D = texelFetch(Density, TC, 0).x;
         float D = texture2D(density, uv).x;
-        V += (dt * px1 * (T - ambient_temperature) * sigma - D * kappa ) * vec2(0, 1);
+        //V += (dt * px1 * (T - ambient_temperature) * sigma - D * kappa ) * vec2(0, 1);
+        V += (dt * px1 * (T - ambient_temperature) * sigma - D * kappa ) * gravity;
         gl_FragColor = vec4(V.x, V.y, 1.0, 1.0);
     }
 }

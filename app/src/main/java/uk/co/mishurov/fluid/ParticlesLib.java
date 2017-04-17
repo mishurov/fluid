@@ -15,5 +15,6 @@ public class ParticlesLib
      public static native void init(int width, int height);
      public static native void touch(float x, float y);
      public static native void step(float elapsedTime);
+     public static native void rotate(int angle);
      public static native void createAssetManager(AssetManager assetManager);
 }

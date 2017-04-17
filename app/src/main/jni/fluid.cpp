@@ -171,7 +171,7 @@ void FluidInit(int width, int height) {
 		{
 			{"px", {FBO(), px}},
 			{"px1", {FBO(), px1}},
-			{"dissipation", {FBO(), {0.9}}},
+			{"dissipation", {FBO(), {0.95}}},
 			{"velocity", {velocity_ping, vector<float>()}},
 			{"source", {temperature_ping, vector<float>()}},
 			{"dt", {FBO(), {step}}},
@@ -365,12 +365,20 @@ void FluidTouch(float x, float y) {
 	y_1 = y;
 }
 
+float pi = 3.14159265;
+vector<float> gravity = {0, 0};
+
+void FluidRotate(int angle) {
+	angle += 90;
+	float theta = (float) angle * pi / 180.0;
+	gravity = {(float) cos(theta), (float) sin(theta)};
+}
+
 void SwapBuffers(FBO *fbo0, FBO *fbo1) {
 	FBO swap = *fbo0;
 	*fbo0 = *fbo1;
 	*fbo1 = swap;
 }
-
 
 void FluidUpdate(float elapsed_time) {
 	UniformsMap uniforms = {
@@ -404,6 +412,7 @@ void FluidUpdate(float elapsed_time) {
 		{"velocity", {velocity_ping, vector<float>()}},
 		{"temperature", {temperature_ping, vector<float>()}},
 		{"density", {density_ping, vector<float>()}},
+		{"gravity", {FBO(), gravity}},
 	};
     apply_buoyancy.SetUniforms(uniforms);
     apply_buoyancy.SetFBO(velocity_pong);
@@ -431,12 +440,14 @@ void FluidUpdate(float elapsed_time) {
 		}}
 	};
 
+	float force_avg = (float) fabs(xd) + (float) fabs(yd);
+
 	// temperature
 	UniformsMap module_force = {
 		{"force", {FBO(),
 			{
-				(float) fabs(xd*2) * px_x * cursor_size * mouse_force,
-				(float) fabs(yd*2) * px_y * cursor_size * mouse_force,
+				force_avg * px_x * cursor_size * mouse_force,
+				force_avg * px_y * cursor_size * mouse_force,
 			}
 		}},
 	};

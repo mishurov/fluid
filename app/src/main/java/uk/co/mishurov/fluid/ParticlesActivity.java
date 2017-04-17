@@ -13,6 +13,8 @@ import android.widget.Toast;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.preference.PreferenceManager;
+import android.view.Display;
+import android.view.Surface;
 
 
 public class ParticlesActivity extends Activity {
@@ -32,6 +34,7 @@ public class ParticlesActivity extends Activity {
     float x1, y1;
     float x2, y2;
     int orientation;
+    int mScreenRotation;
 
     // On applications creation
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -40,11 +43,30 @@ public class ParticlesActivity extends Activity {
         // Listen orientation
         orientation = 0;
 
+        Display display = getWindowManager().getDefaultDisplay();
+        int rotation = display.getRotation();
+        switch (rotation) {
+            case Surface.ROTATION_90:
+                mScreenRotation = 90;
+                break;
+            case Surface.ROTATION_180:
+                mScreenRotation = 180;
+                break;
+            case Surface.ROTATION_270:
+                mScreenRotation = -90;
+                break;
+            default:
+                mScreenRotation = 0;
+                break;
+        }
+
         mOrientationListener = new OrientationEventListener(this,
             SensorManager.SENSOR_DELAY_NORMAL) {
                 @Override
                 public void onOrientationChanged(int orientation) {
-                    ParticlesActivity.this.orientation = orientation;
+                    int r = ParticlesActivity.this.mScreenRotation;
+                    ParticlesActivity.this.orientation = orientation + r;
+                    ParticlesLib.rotate(orientation + r);
                 }
             };
 

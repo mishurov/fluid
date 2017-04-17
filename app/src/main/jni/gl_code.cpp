@@ -22,6 +22,11 @@ bool PassTouch(float x, float y) {
 	return true;
 }
 
+bool Rotate(int angle) {
+	FluidRotate(angle);
+	return true;
+}
+
 
 extern "C" 
 {
@@ -36,8 +41,12 @@ extern "C"
 		RenderFrame(elapsed_time);
 	}
 
-	JNIEXPORT void JNICALL Java_uk_co_mishurov_fluid_ParticlesLib_touch(JNIEnv * env, jobject obj,  jfloat x, jfloat y) {
+	JNIEXPORT void JNICALL Java_uk_co_mishurov_fluid_ParticlesLib_touch(JNIEnv * env, jobject obj, jfloat x, jfloat y) {
 		PassTouch(x, y);
+	}
+
+	JNIEXPORT void JNICALL Java_uk_co_mishurov_fluid_ParticlesLib_rotate(JNIEnv * env, jobject obj, jint angle) {
+		Rotate(angle);
 	}
 
 	JNIEXPORT void JNICALL Java_uk_co_mishurov_fluid_ParticlesLib_createAssetManager(JNIEnv* env, jobject obj, jobject assetManager) {
