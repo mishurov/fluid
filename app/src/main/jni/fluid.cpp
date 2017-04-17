@@ -7,7 +7,7 @@ int iterations = 8;
 int mouse_force = 1;
 // not used float resolution = 0.5;
 float cursor_size = 100;
-float step = 1/60;
+float step = 0.01;
 
 
 FBO pressureFBO0;
