@@ -7,21 +7,29 @@ int iterations = 8;
 int mouse_force = 1;
 // not used float resolution = 0.5;
 float cursor_size = 100;
-float step = 1/60;
+float step = 0.02;
 
 
-FBO pressureFBO0;
-FBO pressureFBO1;
+ComputeKernel advect_velocity;
+ComputeKernel advect_temperature;
+ComputeKernel advect_density;
+ComputeKernel apply_buoyancy;
+ComputeKernel apply_impulse_temperature;
+ComputeKernel apply_impulse_density;
+ComputeKernel apply_divergence;
+ComputeKernel compute_jacobi;
+ComputeKernel subtract_gradient;
+ComputeKernel draw;
 
-ComputeKernel advectVelocityKernel;
-ComputeKernel velocityBoundaryKernel;
-ComputeKernel addForceKernel;
-ComputeKernel divergenceKernel;
-ComputeKernel jacobiKernel;
-ComputeKernel pressureBoundaryKernel;
-ComputeKernel subtractPressureGradientKernel;
-ComputeKernel subtractPressureGradientBoundaryKernel;
-ComputeKernel drawKernel;
+FBO pressure_ping;
+FBO pressure_pong;
+FBO velocity_ping;
+FBO velocity_pong;
+FBO density_ping;
+FBO density_pong;
+FBO temperature_ping;
+FBO temperature_pong;
+FBO divergence_pong;
 
 float px_x;
 float px_y;
@@ -119,171 +127,176 @@ void FluidInit(int width, int height) {
 		}
 	);
 	
-	FBO velocityFBO0(width, height, GL_FLOAT, GL_RGBA);
-	FBO velocityFBO1(width, height, GL_FLOAT, GL_RGBA);
-	FBO divergenceFBO = FBO(width, height, GL_FLOAT, format);
-	pressureFBO0 = FBO(width, height, GL_FLOAT, format);
-	pressureFBO1 = FBO(width, height, GL_FLOAT, format);
+	/* inkling */
+	Shader advect("shaders/kernel.glsl", "shaders/advect.glsl");
+	Shader jacobi("shaders/kernel.glsl", "shaders/jacobi.glsl");
+	Shader gradient("shaders/kernel.glsl", "shaders/gradient.glsl");
+	Shader divergence("shaders/kernel.glsl", "shaders/divergence.glsl");
+	Shader impulse("shaders/kernel.glsl", "shaders/splat.glsl");
+	Shader buoyancy("shaders/kernel.glsl", "shaders/buoyancy.glsl");
+	Shader visualize("shaders/kernel.glsl", "shaders/visualize.glsl");
 
-	Shader kernel_advect("shaders/kernel.vertex", "shaders/advect.frag");
-	Shader boundary_advect("shaders/boundary.vertex", "shaders/advect.frag");
-	Shader cursor_addForce("shaders/cursor.vertex", "shaders/addForce.frag");
-	Shader kernel_divergence("shaders/kernel.vertex", "shaders/divergence.frag");
-	Shader kernel_jacobi("shaders/kernel.vertex", "shaders/jacobi.frag");
-	Shader boundary_jacobi("shaders/boundary.vertex", "shaders/jacobi.frag");
-	Shader kernel_subtractPressureGradient(
-		"shaders/kernel.vertex", "shaders/subtractPressureGradient.frag"
-	);
-	Shader boundary_subtractPressureGradient(
-		"shaders/boundary.vertex", "shaders/subtractPressureGradient.frag"
-	);
-	Shader kernel_visualize("shaders/kernel.vertex", "shaders/visualize.frag");
+	velocity_ping = FBO(width, height, GL_FLOAT, GL_RGBA);
+	velocity_pong = FBO(width, height, GL_FLOAT, GL_RGBA);
+	density_ping = FBO(width, height, GL_FLOAT, GL_RGBA);
+	density_pong = FBO(width, height, GL_FLOAT, GL_RGBA);
+	pressure_ping = FBO(width, height, GL_FLOAT, GL_RGBA);
+	pressure_pong = FBO(width, height, GL_FLOAT, GL_RGBA);
+	temperature_ping = FBO(width, height, GL_FLOAT, GL_RGBA);
+	temperature_pong = FBO(width, height, GL_FLOAT, GL_RGBA);
+	divergence_pong = FBO(width, height, GL_FLOAT, GL_RGBA);
 
-	advectVelocityKernel = ComputeKernel(
-		kernel_advect,
+	advect_velocity = ComputeKernel(
+		advect,
 		inside,
 		{
 			{"px", {FBO(), px}},
 			{"px1", {FBO(), px1}},
-			{"scale", {FBO(), {1.0}}},
-			{"velocity", {velocityFBO0, vector<float>()}},
-			{"source", {velocityFBO0, vector<float>()}},
+			{"dissipation", {FBO(), {1.0}}},
+			{"velocity", {velocity_ping, vector<float>()}},
+			{"source", {velocity_ping, vector<float>()}},
 			{"dt", {FBO(), {step}}},
 		},
-		velocityFBO1,
+		velocity_pong,
 		"",
 		false,
 		false
 	);
 
-	velocityBoundaryKernel = ComputeKernel(
-		boundary_advect,
-		boundary,
+	advect_temperature = ComputeKernel(
+		advect,
+		inside,
 		{
 			{"px", {FBO(), px}},
-			{"scale", {FBO(), {-1.0}}},
-			{"velocity", {velocityFBO0, vector<float>()}},
-			{"source", {velocityFBO0, vector<float>()}},
+			{"px1", {FBO(), px1}},
+			{"dissipation", {FBO(), {1.0}}},
+			{"velocity", {velocity_ping, vector<float>()}},
+			{"source", {temperature_ping, vector<float>()}},
 			{"dt", {FBO(), {step}}},
 		},
-		velocityFBO1,
+		temperature_pong,
 		"",
 		false,
 		false
 	);
 
-	/* cursor */
-	Mesh cursor(
-		GL_TRIANGLES,
-		ScreenQuad(px_x * cursor_size * 2, px_y * cursor_size *2 ),
-		{ 0, 1, 2, 3, 4, 5 },
-		{
-			{"position",
-				{
-					{"size", 3},
-					{"stride", 0},
-					{"offset", 0},
-				},
-			},
-		}
-	);
-
-	addForceKernel = ComputeKernel(
-		cursor_addForce,
-		cursor,
+	advect_density = ComputeKernel(
+		advect,
+		inside,
 		{
 			{"px", {FBO(), px}},
-			{"force", {FBO(), {0.5, 0.2}}},
-			{"center", {FBO(), {0.1, 0.4}}},
-			{"scale", {FBO(), {cursor_size * px_x, cursor_size * px_y}}},
+			{"px1", {FBO(), px1}},
+			{"dissipation", {FBO(), {1.0}}},
+			{"velocity", {velocity_ping, vector<float>()}},
+			{"source", {density_ping, vector<float>()}},
+			{"dt", {FBO(), {step}}},
 		},
-		velocityFBO1,
+		density_pong,
+		"",
+		false,
+		false
+	);
+
+	apply_buoyancy = ComputeKernel(
+		buoyancy,
+		all,
+		{
+			{"ambient_temperature", {FBO(), {10.0}}},
+			{"sigma", {FBO(), {1.0}}}, // Smoke Buoyancy
+			{"kappa", {FBO(), {0.05}}}, // Smoke Weight
+			{"velocity", {velocity_ping, vector<float>()}},
+			{"temperature", {temperature_ping, vector<float>()}},
+			{"density", {density_ping, vector<float>()}},
+			{"px", {FBO(), px}},
+			{"px1", {FBO(), px1}},
+			{"dt", {FBO(), {step}}},
+		},
+		velocity_pong,
+		"",
+		false,
+		false
+	);
+
+	apply_impulse_temperature = ComputeKernel(
+		impulse,
+		all,
+		{
+			{"px", {FBO(), px}},
+			{"radius", {FBO(), {0.1}}},
+			{"point", {FBO(), {0.5, 0.1}}},
+			{"fill_color", {FBO(), {10, 10, 10}}},
+		},
+		temperature_ping,
 		"add",
 		false,
 		false
 	);
 
-	divergenceKernel = ComputeKernel(
-		kernel_divergence,
+	apply_impulse_density = ComputeKernel(
+		impulse,
 		all,
 		{
-			{"velocity", {velocityFBO1, vector<float>()}},
+			{"px", {FBO(), px}},
+			{"radius", {FBO(), {0.1}}},
+			{"point", {FBO(), {0.5, 0.1}}},
+			{"fill_color", {FBO(), {0.1, 0.1, 0.1}}},
+		},
+		density_ping,
+		"add",
+		false,
+		false
+	);
+
+	apply_divergence = ComputeKernel(
+		divergence,
+		all,
+		{
+			{"velocity", {velocity_ping, vector<float>()}},
 			{"px", {FBO(), px}},
 		},
-		divergenceFBO,
+		divergence_pong,
 		"",
 		false,
 		false
 	);
 
-	jacobiKernel = ComputeKernel(
-		kernel_jacobi,
+	compute_jacobi = ComputeKernel(
+		jacobi,
 		all,
 		{
-			{"pressure", {pressureFBO0, vector<float>()}},
-			{"divergence", {divergenceFBO, vector<float>()}},
+			{"pressure", {pressure_ping, vector<float>()}},
+			{"divergence", {divergence_pong, vector<float>()}},
 			{"alpha", {FBO(), {-1.0}}},
 			{"beta", {FBO(), {0.25}}},
 			{"px", {FBO(), px}},
 		},
-		pressureFBO1,
+		pressure_pong,
 		"",
 		false,
-		true
+		false
 	);
 
-	pressureBoundaryKernel = ComputeKernel(
-		boundary_jacobi,
-		boundary,
-		{
-			{"pressure", {pressureFBO0, vector<float>()}},
-			{"divergence", {divergenceFBO, vector<float>()}},
-			{"alpha", {FBO(), {-1.0}}},
-			{"beta", {FBO(), {0.25}}},
-			{"px", {FBO(), px}},
-		},
-		pressureFBO1,
-		"",
-		true,
-		true
-	);
-	
-	subtractPressureGradientKernel = ComputeKernel(
-		kernel_subtractPressureGradient,
+	subtract_gradient = ComputeKernel(
+		gradient,
 		all,
 		{
 			{"scale", {FBO(), {1.0}}},
-			{"pressure", {pressureFBO0, vector<float>()}},
-			{"velocity", {velocityFBO1, vector<float>()}},
+			{"pressure", {pressure_ping, vector<float>()}},
+			{"velocity", {velocity_ping, vector<float>()}},
 			{"px", {FBO(), px}},
 		},
-		velocityFBO0,
+		velocity_pong,
 		"",
 		false,
 		false
 	);
 
-	subtractPressureGradientBoundaryKernel = ComputeKernel(
-		boundary_subtractPressureGradient,
-		boundary,
-		{
-			{"scale", {FBO(), {-1.0}}},
-			{"pressure", {pressureFBO0, vector<float>()}},
-			{"velocity", {velocityFBO1, vector<float>()}},
-			{"px", {FBO(), px}},
-		},
-		velocityFBO0,
-		"",
-		false,
-		false
-	);
-
-	drawKernel = ComputeKernel(
-		kernel_visualize,
+	draw = ComputeKernel(
+		visualize,
 		all,
 		{
-			{"velocity", {velocityFBO0, vector<float>()}},
-			{"pressure", {pressureFBO0, vector<float>()}},
+			{"sampler", {pressure_pong, vector<float>()}},
+			{"fill_color", {FBO(), {1, 0, 0}}},
 			{"px", {FBO(), px}},
 		},
 		FBO(),
@@ -303,8 +316,90 @@ void FluidTouch(float x, float y) {
 	y1 = y;
 }
 
+void SwapBuffers(FBO *fbo0, FBO *fbo1) {
+	FBO swap = *fbo0;
+	*fbo0 = *fbo1;
+	*fbo1 = swap;
+}
+
+
 void FluidUpdate(float elapsed_time) {
-	// x1, x1 - cursor position
+	UniformsMap uniforms = {
+		{"source", {velocity_ping, vector<float>()}},
+		{"velocity", {velocity_ping, vector<float>()}}
+	};
+    advect_velocity.SetUniforms(uniforms);
+    advect_velocity.SetFBO(velocity_pong);
+	advect_velocity.Run();
+	SwapBuffers(&velocity_ping, &velocity_pong);
+
+	uniforms = {
+		{"source", {temperature_ping, vector<float>()}},
+		{"velocity", {velocity_ping, vector<float>()}}
+	};
+    advect_temperature.SetUniforms(uniforms);
+    advect_temperature.SetFBO(temperature_pong);
+	advect_temperature.Run();
+	SwapBuffers(&temperature_ping, &temperature_pong);
+
+	uniforms = {
+		{"source", {density_ping, vector<float>()}},
+		{"velocity", {velocity_ping, vector<float>()}}
+	};
+    advect_density.SetUniforms(uniforms);
+    advect_density.SetFBO(density_pong);
+	advect_density.Run();
+	SwapBuffers(&density_ping, &density_pong);
+	
+	uniforms = {
+		{"velocity", {velocity_ping, vector<float>()}},
+		{"temperature", {temperature_ping, vector<float>()}},
+		{"density", {density_ping, vector<float>()}},
+	};
+    apply_buoyancy.SetUniforms(uniforms);
+    apply_buoyancy.SetFBO(velocity_pong);
+	apply_buoyancy.Run();
+	SwapBuffers(&velocity_ping, &velocity_pong);
+
+    apply_impulse_temperature.SetFBO(velocity_ping);
+	apply_impulse_temperature.Run();
+    apply_impulse_density.SetFBO(density_ping);
+	apply_impulse_density.Run();
+
+	uniforms = {
+		{"velocity", {velocity_ping, vector<float>()}},
+	};
+    apply_divergence.SetUniforms(uniforms);
+    apply_divergence.SetFBO(divergence_pong);
+	apply_divergence.Run();
+
+	for(int i = 0; i < iterations; i++) {
+		uniforms = {
+			{"divergence", {divergence_pong, vector<float>()}},
+			{"pressure", {pressure_ping, vector<float>()}},
+		};
+    	compute_jacobi.SetUniforms(uniforms);
+    	compute_jacobi.SetFBO(pressure_pong);
+		compute_jacobi.Run();
+		SwapBuffers(&pressure_ping, &pressure_pong);
+	}
+	uniforms = {
+		{"velocity", {velocity_ping, vector<float>()}},
+		{"pressure", {pressure_ping, vector<float>()}},
+	};
+    subtract_gradient.SetUniforms(uniforms);
+    subtract_gradient.SetFBO(velocity_pong);
+	subtract_gradient.Run();
+	SwapBuffers(&velocity_ping, &velocity_pong);
+
+	uniforms = {
+		{"sampler", {density_ping, vector<float>()}},
+	};
+    draw.SetUniforms(uniforms);
+	draw.Run();
+
+
+	/*
 	
 	float xd = x1 - x0;
  	float yd = y1 - y0;
@@ -353,5 +448,6 @@ void FluidUpdate(float elapsed_time) {
     subtractPressureGradientBoundaryKernel.Run();
 	
 	drawKernel.Run();
+	*/
 }
 

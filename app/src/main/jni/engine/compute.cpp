@@ -73,3 +73,15 @@ void ComputeKernel::SetUniforms(const UniformsMap& uniforms) {
 void ComputeKernel::SetFBO(FBO fbo) {
 	outputFBO_ = fbo;
 }
+
+void ComputeKernel::SwapBuffer(string fbo_name) {
+	for (UniformsMap::iterator it = uniforms_.begin();
+	  it != uniforms_.end();
+	  ++it) {
+	  	if (it->first == fbo_name) {
+			FBO swap = outputFBO_;
+			outputFBO_ = it->second.first;
+			it->second.first = swap;
+		}
+	}
+}

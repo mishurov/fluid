@@ -30,6 +30,7 @@ public:
 	void Run();
 	void SetUniforms(const UniformsMap& uniforms);
 	void SetFBO(FBO fbo);
+	void SwapBuffer(string fbo_name);
 };
 
 #endif // __ENGINE_COMPUTE_H__
