@@ -6,7 +6,7 @@ varying vec2 uv;
 
 void main()
 {
-    float l = texture2D(sampler, uv).x;
+    float l = texture2D(sampler, uv).r;
     gl_FragColor = vec4(fill_color*l, 1.0);
 }
 

@@ -7,7 +7,7 @@ int iterations = 8;
 int mouse_force = 1;
 // not used float resolution = 0.5;
 float cursor_size = 100;
-float step = 0.02;
+float step = 1.0 / 60.0;
 
 
 ComputeKernel advect_velocity;
@@ -46,7 +46,9 @@ void FluidInit(int width, int height) {
 	px_x = 1.0 / (float) width;
 	px_y = 1.0 / (float) height;
 	vector<float> px = { px_x, px_y };
-	vector<float> px1 = { 1.0, (float) width / (float) height };
+	//vector<float> px1 = { 1.0, (float) width / (float) height };
+	vector<float> px1 = { (float) width / (float) height, 1.0 };
+	//vector<float> px1 = { 1.0, 1.0 };
 	
 	Mesh inside(
 		GL_TRIANGLES,
@@ -146,6 +148,9 @@ void FluidInit(int width, int height) {
 	temperature_pong = FBO(width, height, GL_FLOAT, GL_RGBA);
 	divergence_pong = FBO(width, height, GL_FLOAT, GL_RGBA);
 
+	velocity_ping.Clear(0, 1);
+	velocity_pong.Clear(0, 1);
+
 	advect_velocity = ComputeKernel(
 		advect,
 		inside,
@@ -201,8 +206,8 @@ void FluidInit(int width, int height) {
 		buoyancy,
 		all,
 		{
-			{"ambient_temperature", {FBO(), {10.0}}},
-			{"sigma", {FBO(), {1.0}}}, // Smoke Buoyancy
+			{"ambient_temperature", {FBO(), {0.0}}},
+			{"sigma", {FBO(), {0.7}}}, // Smoke Buoyancy
 			{"kappa", {FBO(), {0.05}}}, // Smoke Weight
 			{"velocity", {velocity_ping, vector<float>()}},
 			{"temperature", {temperature_ping, vector<float>()}},
@@ -224,7 +229,7 @@ void FluidInit(int width, int height) {
 			{"px", {FBO(), px}},
 			{"radius", {FBO(), {0.1}}},
 			{"point", {FBO(), {0.5, 0.1}}},
-			{"fill_color", {FBO(), {10, 10, 10}}},
+			{"fill_color", {FBO(), {0.01, 0.01, 0.01}}},
 		},
 		temperature_ping,
 		"add",
@@ -239,7 +244,7 @@ void FluidInit(int width, int height) {
 			{"px", {FBO(), px}},
 			{"radius", {FBO(), {0.1}}},
 			{"point", {FBO(), {0.5, 0.1}}},
-			{"fill_color", {FBO(), {0.1, 0.1, 0.1}}},
+			{"fill_color", {FBO(), {0.04, 0.04, 0.04}}},
 		},
 		density_ping,
 		"add",
@@ -296,7 +301,7 @@ void FluidInit(int width, int height) {
 		all,
 		{
 			{"sampler", {pressure_pong, vector<float>()}},
-			{"fill_color", {FBO(), {1, 0, 0}}},
+			{"fill_color", {FBO(), {0.16, 0.01, 0.36}}},
 			{"px", {FBO(), px}},
 		},
 		FBO(),
@@ -358,7 +363,7 @@ void FluidUpdate(float elapsed_time) {
 	};
     apply_buoyancy.SetUniforms(uniforms);
     apply_buoyancy.SetFBO(velocity_pong);
-	apply_buoyancy.Run();
+	//apply_buoyancy.Run();
 	SwapBuffers(&velocity_ping, &velocity_pong);
 
     apply_impulse_temperature.SetFBO(velocity_ping);
@@ -372,7 +377,8 @@ void FluidUpdate(float elapsed_time) {
     apply_divergence.SetUniforms(uniforms);
     apply_divergence.SetFBO(divergence_pong);
 	apply_divergence.Run();
-
+	
+	pressure_ping.Clear(0, 0);
 	for(int i = 0; i < iterations; i++) {
 		uniforms = {
 			{"divergence", {divergence_pong, vector<float>()}},

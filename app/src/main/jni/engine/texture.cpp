@@ -95,3 +95,9 @@ int FBO::unit() {
 	return unit_;
 }
 
+void FBO::Clear(float color, float alpha) {
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_);
+    glClearColor(color, color, color, alpha);
+    glClear(GL_COLOR_BUFFER_BIT);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}

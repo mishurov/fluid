@@ -13,8 +13,5 @@ void main(){
     //FragColor = Dissipation * texture(SourceTexture, coord);
 
     gl_FragColor = texture2D(source, uv-texture2D(velocity, uv).xy*dt*px1)*dissipation;
-    //vec2 u = texture2D(velocity, uv).xy;
-    //vec2 coord = uv - dt * u * px1;
-    //gl_FragColor = texture2D(source, coord);
 
 }
