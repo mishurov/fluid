@@ -7,15 +7,15 @@
 using namespace std;
 
 //int iterations = 32;
-int iterations = 16;
-int mouse_force = 1;
+static int iterations = 16;
+static int mouse_force = 1;
 // not used float resolution = 0.5;
-float cursor_size = 50;
-float step = 1.0 / 60.0;
+static float cursor_size = 50;
+static float step = 1.0 / 60.0;
 
 //vector<float> fg_color = { 0.16, 0.01, 0.36 };
-vector<float> fg_color = { 0.0, 0.0, 0.0 };
-vector<float> bg_color = { 1.0, 1.0, 1.0 };
+static vector<float> fg_color = { 0.0, 0.0, 0.0 };
+static vector<float> bg_color = { 1.0, 1.0, 1.0 };
 
 
 vector<float> ArgbHexStringToRrbVecFloat(string str) {
@@ -40,29 +40,29 @@ void FluidSetPrefs(
 	cursor_size = (float) (cursor_size_arg * 10);
 }
 
-ComputeKernel advect_velocity;
-ComputeKernel advect_temperature;
-ComputeKernel advect_density;
-ComputeKernel apply_buoyancy;
-ComputeKernel apply_impulse_temperature;
-ComputeKernel apply_impulse_density;
-ComputeKernel apply_divergence;
-ComputeKernel compute_jacobi;
-ComputeKernel subtract_gradient;
-ComputeKernel draw;
+static ComputeKernel advect_velocity;
+static ComputeKernel advect_temperature;
+static ComputeKernel advect_density;
+static ComputeKernel apply_buoyancy;
+static ComputeKernel apply_impulse_temperature;
+static ComputeKernel apply_impulse_density;
+static ComputeKernel apply_divergence;
+static ComputeKernel compute_jacobi;
+static ComputeKernel subtract_gradient;
+static ComputeKernel draw;
 
-FBO pressure_ping;
-FBO pressure_pong;
-FBO velocity_ping;
-FBO velocity_pong;
-FBO density_ping;
-FBO density_pong;
-FBO temperature_ping;
-FBO temperature_pong;
-FBO divergence_pong;
+static FBO pressure_ping;
+static FBO pressure_pong;
+static FBO velocity_ping;
+static FBO velocity_pong;
+static FBO density_ping;
+static FBO density_pong;
+static FBO temperature_ping;
+static FBO temperature_pong;
+static FBO divergence_pong;
 
-float px_x;
-float px_y;
+static float px_x;
+static float px_y;
 
 
 bool HasFloatLuminanceFBOSupport() {
@@ -354,11 +354,11 @@ void FluidInit(int width, int height) {
 	);
 }
 
-float x_0 = 0;
-float y_0 = 0;
-float x_1 = 0;
-float y_1 = 0;
-bool is_cursor_down = false;
+static float x_0 = 0;
+static float y_0 = 0;
+static float x_1 = 0;
+static float y_1 = 0;
+static bool is_cursor_down = false;
 
 void FluidTouch(bool is_down, float x, float y) {
 	is_cursor_down = is_down;
@@ -366,8 +366,8 @@ void FluidTouch(bool is_down, float x, float y) {
 	y_1 = y;
 }
 
-float pi = 3.14159265;
-vector<float> gravity = {0, 0};
+static float pi = 3.14159265;
+static vector<float> gravity = {0, 0};
 
 void FluidRotate(int angle) {
 	angle += 90;
@@ -441,7 +441,7 @@ void FluidUpdate(float elapsed_time) {
 		}}
 	};
 	
-	float min_d = 5.0;
+	float min_d = 15.0;
 
 	float force_avg = (float) fabs(xd) + (float) fabs(yd);
 	if (is_cursor_down) {

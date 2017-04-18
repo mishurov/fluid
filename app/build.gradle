@@ -13,8 +13,8 @@ android {
         externalNativeBuild {
             cmake {
                 targets "particles"
-                abiFilters "x86"
-                //abiFilters "armeabi"
+                //abiFilters "x86"
+                abiFilters "armeabi-v7a"
                 //abiFilters "x86_64", "armeabi-v7a", "x86_64", "armeabi", "arm64-v8a", "x86", "mips", "mips64"
                 //abiFilters "x86_64"
             }
