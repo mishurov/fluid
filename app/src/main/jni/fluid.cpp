@@ -35,6 +35,10 @@ FBO divergence_pong;
 float px_x;
 float px_y;
 
+//vector<float> fg_color = { 0.16, 0.01, 0.36 };
+vector<float> fg_color = { 0.0, 0.0, 0.0 };
+vector<float> bg_color = { 1.0, 1.0, 1.0 };
+
 bool HasFloatLuminanceFBOSupport() {
 	FBO fbo(32, 32, GL_FLOAT, GL_LUMINANCE);
 	return fbo.supported();
@@ -219,38 +223,6 @@ void FluidInit(int width, int height) {
 		false
 	);
 
-	/*
-	apply_impulse_temperature = ComputeKernel(
-		impulse,
-		all,
-		{
-			{"px", {FBO(), px}},
-			{"radius", {FBO(), {0.1}}},
-			{"point", {FBO(), {0.5, 0.1}}},
-			{"fill_color", {FBO(), {0.01, 0.01, 0.01}}},
-		},
-		temperature_ping,
-		"add",
-		false,
-		false
-	);
-
-	apply_impulse_density = ComputeKernel(
-		impulse,
-		all,
-		{
-			{"px", {FBO(), px}},
-			{"radius", {FBO(), {0.1}}},
-			{"point", {FBO(), {0.5, 0.1}}},
-			{"fill_color", {FBO(), {0.04, 0.04, 0.04}}},
-		},
-		density_ping,
-		"add",
-		false,
-		false
-	);
-	*/
-	
 	Mesh cursor(
 		GL_TRIANGLES,
 		ScreenQuad(px_x * cursor_size * 2, px_y * cursor_size *2 ),
@@ -345,7 +317,8 @@ void FluidInit(int width, int height) {
 		all,
 		{
 			{"sampler", {pressure_pong, vector<float>()}},
-			{"fill_color", {FBO(), {0.16, 0.01, 0.36}}},
+			{"bg_color", {FBO(), bg_color}},
+			{"fg_color", {FBO(), fg_color}},
 			{"px", {FBO(), px}},
 		},
 		FBO(),
@@ -508,56 +481,5 @@ void FluidUpdate(float elapsed_time) {
     draw.SetUniforms(uniforms);
 	draw.Run();
 
-
-	/*
-	
-	float xd = x1 - x0;
- 	float yd = y1 - y0;
-	x0 = x1;
-	y0 = y1;
-	
-	UniformsMap advect = {{"dt", {FBO(), {step}}}};
-    advectVelocityKernel.SetUniforms(advect);
-    advectVelocityKernel.Run();
-
-	UniformsMap force = {
-		{"force", {FBO(),
-			{
-				xd * px_x * cursor_size * mouse_force,
-				-yd * px_y * cursor_size * mouse_force
-			}
-		}},
-		{"center", {FBO(),
-			{
-				x0 * px_x * 2 - 1,
-				(y0 * px_y * 2 - 1) * -1
-			}
-		}}
-	};
-    addForceKernel.SetUniforms(force);
-
-    addForceKernel.Run();
-	velocityBoundaryKernel.Run();
-	divergenceKernel.Run();
-	
-	FBO p0 = pressureFBO0;
-	FBO p1 = pressureFBO1;
-	FBO p_ = p0;
-	for(int i = 0; i < iterations; i++) {
-		UniformsMap pressure = {{"pressure", {p0, vector<float>()}}};
-    	jacobiKernel.SetUniforms(pressure);
-    	jacobiKernel.SetFBO(p1);
-		jacobiKernel.Run();
-		pressureBoundaryKernel.Run();
-		p_ = p0;
-		p0 = p1;
-		p1 = p_;
-	}
-
-	subtractPressureGradientKernel.Run();
-    subtractPressureGradientBoundaryKernel.Run();
-	
-	drawKernel.Run();
-	*/
 }
 

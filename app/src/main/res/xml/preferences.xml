@@ -7,7 +7,7 @@
         android:entries="@array/pref_grid_entries"
         android:entryValues="@array/pref_grid_values"
         android:defaultValue="@string/pref_grid_default" />
-    <ListPreference 
+    <ListPreference
         android:key="pref_method"
         android:title="@string/pref_method_title"
         android:summary="@string/pref_method_summary"
