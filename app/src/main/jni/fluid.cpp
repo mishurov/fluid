@@ -3,28 +3,28 @@
 using namespace std;
 
 //int iterations = 32;
-int iterations = 8;
-int mouse_force = 1;
+static int iterations = 8;
+static int mouse_force = 1;
 // not used float resolution = 0.5;
-float cursor_size = 100;
-float step = 1.0 / 60;
+static float cursor_size = 100;
+static float step = 1.0 / 60;
 
 
-FBO pressureFBO0;
-FBO pressureFBO1;
+static FBO pressureFBO0;
+static FBO pressureFBO1;
 
-ComputeKernel advectVelocityKernel;
-ComputeKernel velocityBoundaryKernel;
-ComputeKernel addForceKernel;
-ComputeKernel divergenceKernel;
-ComputeKernel jacobiKernel;
-ComputeKernel pressureBoundaryKernel;
-ComputeKernel subtractPressureGradientKernel;
-ComputeKernel subtractPressureGradientBoundaryKernel;
-ComputeKernel drawKernel;
+static ComputeKernel advectVelocityKernel;
+static ComputeKernel velocityBoundaryKernel;
+static ComputeKernel addForceKernel;
+static ComputeKernel divergenceKernel;
+static ComputeKernel jacobiKernel;
+static ComputeKernel pressureBoundaryKernel;
+static ComputeKernel subtractPressureGradientKernel;
+static ComputeKernel subtractPressureGradientBoundaryKernel;
+static ComputeKernel drawKernel;
 
-float px_x;
-float px_y;
+static float px_x;
+static float px_y;
 
 bool HasFloatLuminanceFBOSupport() {
 	FBO fbo(32, 32, GL_FLOAT, GL_LUMINANCE);
@@ -293,10 +293,10 @@ void FluidInit(int width, int height) {
 	);
 }
 
-float x0 = 0;
-float y0 = 0;
-float x1 = 0;
-float y1 = 0;
+static float x0 = 0;
+static float y0 = 0;
+static float x1 = 0;
+static float y1 = 0;
 
 void FluidTouch(float x, float y) {
 	x1 = x;
