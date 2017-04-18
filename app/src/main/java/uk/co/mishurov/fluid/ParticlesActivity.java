@@ -20,8 +20,10 @@ import android.view.Surface;
 public class ParticlesActivity extends Activity {
     private static final String TAG = "Fluid";
     private static final float GESTURE_TRESHOLD = 3;
-    public static final String KEY_PREF_GRID = "pref_grid";
-    public static final String KEY_PREF_METHOD = "pref_method";
+    public static final String KEY_PREF_FG_COLOR = "pref_fg_color";
+    public static final String KEY_PREF_BG_COLOR = "pref_bg_color";
+    public static final String KEY_PREF_ITERATIONS = "pref_iterations";
+    public static final String KEY_PREF_CURSOR_SIZE = "pref_cursor_size";
 
 
     SharedPreferences mPrefs;
@@ -82,17 +84,31 @@ public class ParticlesActivity extends Activity {
 
         // Read and listen preferences
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String gridPref = mPrefs.getString(KEY_PREF_GRID, "");
-        String methodPref = mPrefs.getString(KEY_PREF_METHOD, "");
-        Log.v(TAG, "Got settings");
+        int fgColorPref = mPrefs.getInt(KEY_PREF_FG_COLOR, 0);
+        int bgColorPref = mPrefs.getInt(KEY_PREF_BG_COLOR, 0);
+        int iterationsPref = mPrefs.getInt(KEY_PREF_ITERATIONS, 0);
+        int cursorSizePref = mPrefs.getInt(KEY_PREF_CURSOR_SIZE, 0);
+        Log.v(TAG, "Got settings" + Integer.toHexString(fgColorPref));
+        String fgColorStr = Integer.toHexString(fgColorPref);
+        String bgColorStr = Integer.toHexString(bgColorPref);
+        ParticlesLib.settings(fgColorStr, bgColorStr, iterationsPref, cursorSizePref);
 
         mListener = new OnSharedPreferenceChangeListener() {
             @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+            public void onSharedPreferenceChanged(SharedPreferences sPrefs,
             String key) {
-                if (key.equals(KEY_PREF_GRID) || key.equals(KEY_PREF_METHOD)) {
-                    String gridPref = sharedPreferences.getString(KEY_PREF_GRID, "");
-                    String methodPref = sharedPreferences.getString(KEY_PREF_METHOD, "");
+
+                int fgColorPref = sPrefs.getInt(KEY_PREF_FG_COLOR, 0);
+                int bgColorPref = sPrefs.getInt(KEY_PREF_BG_COLOR, 0);
+                int iterationsPref = sPrefs.getInt(KEY_PREF_ITERATIONS, 0);
+                int cursorSizePref = sPrefs.getInt(KEY_PREF_CURSOR_SIZE, 0);
+                String fgColorStr = Integer.toHexString(fgColorPref);
+                String bgColorStr = Integer.toHexString(bgColorPref);
+                ParticlesLib.settings(fgColorStr, bgColorStr, iterationsPref, cursorSizePref);
+
+                if (key.equals(KEY_PREF_FG_COLOR) || key.equals(KEY_PREF_BG_COLOR)) {
+                    //String gridPref = sharedPreferences.getString(KEY_PREF_GRID, "");
+                    //String methodPref = sharedPreferences.getString(KEY_PREF_METHOD, "");
                     Log.v(TAG, "Setting changed");
                 }
             }

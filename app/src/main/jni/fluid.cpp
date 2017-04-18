@@ -1,15 +1,44 @@
+#include <stdlib.h>
 #include <math.h> 
 #include "fluid.h"
+
+#include <android/log.h>
 
 using namespace std;
 
 //int iterations = 32;
-int iterations = 8;
+int iterations = 16;
 int mouse_force = 1;
 // not used float resolution = 0.5;
 float cursor_size = 50;
 float step = 1.0 / 60.0;
 
+//vector<float> fg_color = { 0.16, 0.01, 0.36 };
+vector<float> fg_color = { 0.0, 0.0, 0.0 };
+vector<float> bg_color = { 1.0, 1.0, 1.0 };
+
+
+vector<float> ArgbHexStringToRrbVecFloat(string str) {
+	string r_str = str.substr(2,2);
+	string g_str = str.substr(4,2);
+	string b_str = str.substr(6,2);
+	int r_int = (int)strtol(r_str.c_str(), NULL, 16);
+	int g_int = (int)strtol(g_str.c_str(), NULL, 16);
+	int b_int = (int)strtol(b_str.c_str(), NULL, 16);
+	float r = (float) r_int / (float) 255.0;
+	float g = (float) g_int / (float) 255.0;
+	float b = (float) b_int / (float) 255.0;
+	return { r, g, b };
+}
+
+void FluidSetPrefs(
+	string fg_color_str, string bg_color_str,
+	int iterations_arg, int cursor_size_arg) {
+	fg_color = ArgbHexStringToRrbVecFloat(fg_color_str);
+	bg_color = ArgbHexStringToRrbVecFloat(bg_color_str);
+	iterations = iterations_arg;
+	cursor_size = (float) (cursor_size_arg * 10);
+}
 
 ComputeKernel advect_velocity;
 ComputeKernel advect_temperature;
@@ -35,9 +64,6 @@ FBO divergence_pong;
 float px_x;
 float px_y;
 
-//vector<float> fg_color = { 0.16, 0.01, 0.36 };
-vector<float> fg_color = { 0.0, 0.0, 0.0 };
-vector<float> bg_color = { 1.0, 1.0, 1.0 };
 
 bool HasFloatLuminanceFBOSupport() {
 	FBO fbo(32, 32, GL_FLOAT, GL_LUMINANCE);
@@ -424,11 +450,12 @@ void FluidUpdate(float elapsed_time) {
 		force_avg = 0;
 	}
 	// temperature
+	float size_factor = cursor_size * 0.003;
 	UniformsMap module_force = {
 		{"force", {FBO(),
 			{
-				force_avg * px_x * cursor_size * mouse_force,
-				force_avg * px_y * cursor_size * mouse_force,
+				force_avg * px_x * mouse_force / size_factor,
+				force_avg * px_y * mouse_force / size_factor,
 			}
 		}},
 	};
@@ -476,6 +503,8 @@ void FluidUpdate(float elapsed_time) {
 	SwapBuffers(&velocity_ping, &velocity_pong);
 
 	uniforms = {
+		{"bg_color", {FBO(), bg_color}},
+		{"fg_color", {FBO(), fg_color}},
 		{"sampler", {density_ping, vector<float>()}},
 	};
     draw.SetUniforms(uniforms);

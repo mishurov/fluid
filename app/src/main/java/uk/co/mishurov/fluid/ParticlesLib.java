@@ -16,5 +16,6 @@ public class ParticlesLib
      public static native void touch(boolean is_down, float x, float y);
      public static native void step(float elapsedTime);
      public static native void rotate(int angle);
+     public static native void settings(String fg_color, String bg_color, int iterations, int cursor_size);
      public static native void createAssetManager(AssetManager assetManager);
 }

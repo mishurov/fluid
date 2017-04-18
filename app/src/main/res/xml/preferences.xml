@@ -1,17 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <ListPreference 
-        android:key="pref_grid"
-        android:title="@string/pref_grid_title"
-        android:summary="@string/pref_grid_summary"
-        android:entries="@array/pref_grid_entries"
-        android:entryValues="@array/pref_grid_values"
-        android:defaultValue="@string/pref_grid_default" />
-    <ListPreference
-        android:key="pref_method"
-        android:title="@string/pref_method_title"
-        android:summary="@string/pref_method_summary"
-        android:entries="@array/pref_method_entries"
-        android:entryValues="@array/pref_method_values"
-        android:defaultValue="@string/pref_method_default" />
+
+    <yuku.ambilwarna.widget.AmbilWarnaPreference
+        android:key="pref_fg_color"
+        android:title="@string/pref_fg_color_title"
+        android:summary="@string/pref_fg_color_summary"
+        android:defaultValue="0xff000000" />
+    <yuku.ambilwarna.widget.AmbilWarnaPreference
+        android:key="pref_bg_color"
+        android:title="@string/pref_bg_color_title"
+        android:summary="@string/pref_bg_color_summary"
+        android:defaultValue="0xffffffff" />
+    <uk.co.mishurov.fluid.NumberPickerPreference
+            android:defaultValue="16"
+            android:key="pref_iterations"
+            android:title="@string/pref_iterations_title"
+            android:summary="@string/pref_iterations_summary"
+            min="4"
+            max="32" />
+    <uk.co.mishurov.fluid.NumberPickerPreference
+            android:defaultValue="10"
+            android:key="pref_cursor_size"
+            android:title="@string/pref_cursor_size_title"
+            android:summary="@string/pref_cursor_size_summary"
+            min="5"
+            max="20" />
+
 </PreferenceScreen>

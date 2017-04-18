@@ -37,7 +37,6 @@ void Shader::Uniforms(const UniformsMap& values) {
 		FBO fbo = values.at(name).first;
 		vector<float> value = values.at(name).second;
 		
-		//__android_log_print(ANDROID_LOG_INFO,"Fluid", "exception");
 		try {
 			uniform_values_.at(name);
 		}

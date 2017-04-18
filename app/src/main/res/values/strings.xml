@@ -2,11 +2,15 @@
 <resources>
     <string name="app_name">Fluids</string>
 
-    <string name="pref_grid_title">Grid</string>
-    <string name="pref_grid_summary">Density of the simulation grid</string>
-    <string name="pref_grid_default">1</string>
+    <string name="pref_fg_color_title">Foreground colour</string>
+    <string name="pref_fg_color_summary">Colour of the density field</string>
 
-    <string name="pref_method_title">Method</string>
-    <string name="pref_method_summary">A numerical method for the PDE</string>
-    <string name="pref_method_default">1</string>
+    <string name="pref_bg_color_title">Background colour</string>
+    <string name="pref_bg_color_summary">Clean plate colour</string>
+
+    <string name="pref_iterations_title">Iterations</string>
+    <string name="pref_iterations_summary">Jacobi iterations: %s</string>
+
+    <string name="pref_cursor_size_title">Cursor size</string>
+    <string name="pref_cursor_size_summary">Radius of a cursor: %s</string>
 </resources>
