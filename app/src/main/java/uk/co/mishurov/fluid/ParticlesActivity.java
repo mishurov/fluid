@@ -134,20 +134,21 @@ public class ParticlesActivity extends Activity {
             {
                 x1 = touchevent.getX();
                 y1 = touchevent.getY();
-
+                ParticlesLib.touch(true, x1, y1);
                 break;
             }
             case MotionEvent.ACTION_MOVE:
             {
                 x1 = touchevent.getX();
                 y1 = touchevent.getY();
-                ParticlesLib.touch(x1, y1);
+                ParticlesLib.touch(true, x1, y1);
                 break;
             }
             case MotionEvent.ACTION_UP:
             {
                 x2 = touchevent.getX();
                 y2 = touchevent.getY();
+                ParticlesLib.touch(false, x2, y2);
 
                 // calculate a direction vector and orientate it
                 float dx = x2 - x1;

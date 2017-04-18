@@ -17,8 +17,8 @@ void RenderFrame(float elapsed_time) {
 	FluidUpdate(elapsed_time);
 }
 
-bool PassTouch(float x, float y) {
-	FluidTouch(x, y);
+bool PassTouch(bool is_down, float x, float y) {
+	FluidTouch(is_down, x, y);
 	return true;
 }
 
@@ -41,8 +41,8 @@ extern "C"
 		RenderFrame(elapsed_time);
 	}
 
-	JNIEXPORT void JNICALL Java_uk_co_mishurov_fluid_ParticlesLib_touch(JNIEnv * env, jobject obj, jfloat x, jfloat y) {
-		PassTouch(x, y);
+	JNIEXPORT void JNICALL Java_uk_co_mishurov_fluid_ParticlesLib_touch(JNIEnv * env, jobject obj, jboolean is_down, jfloat x, jfloat y) {
+		PassTouch(is_down, x, y);
 	}
 
 	JNIEXPORT void JNICALL Java_uk_co_mishurov_fluid_ParticlesLib_rotate(JNIEnv * env, jobject obj, jint angle) {

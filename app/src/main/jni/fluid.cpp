@@ -204,7 +204,7 @@ void FluidInit(int width, int height) {
 		all,
 		{
 			{"ambient_temperature", {FBO(), {0.0}}},
-			{"sigma", {FBO(), {5.0}}}, // Smoke Buoyancy
+			{"sigma", {FBO(), {1.5}}}, // Smoke Buoyancy
 			{"kappa", {FBO(), {0.1}}}, // Smoke Weight
 			{"velocity", {velocity_ping, vector<float>()}},
 			{"temperature", {temperature_ping, vector<float>()}},
@@ -359,8 +359,10 @@ float x_0 = 0;
 float y_0 = 0;
 float x_1 = 0;
 float y_1 = 0;
+bool is_cursor_down = false;
 
-void FluidTouch(float x, float y) {
+void FluidTouch(bool is_down, float x, float y) {
+	is_cursor_down = is_down;
 	x_1 = x;
 	y_1 = y;
 }
@@ -439,9 +441,15 @@ void FluidUpdate(float elapsed_time) {
 			}
 		}}
 	};
+	
+	float min_d = 5.0;
 
 	float force_avg = (float) fabs(xd) + (float) fabs(yd);
-
+	if (is_cursor_down) {
+		force_avg = max(min_d, force_avg);
+	} else {
+		force_avg = 0;
+	}
 	// temperature
 	UniformsMap module_force = {
 		{"force", {FBO(),

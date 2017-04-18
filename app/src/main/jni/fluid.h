@@ -5,7 +5,7 @@
 
 void FluidInit(int width, int height);
 void FluidUpdate(float elapsed_time);
-void FluidTouch(float x, float y);
+void FluidTouch(bool is_down, float x, float y);
 void FluidRotate(int angle);
 
 #endif // __FLUID_H__
