@@ -7,9 +7,12 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 import android.os.SystemClock;
 import android.util.Log;
+import android.opengl.GLES20;
 
 
 class ParticlesView extends GLSurfaceView {
+    private static final String TAG = "Fluid";
+
     public ParticlesView( Context context ) {
         super( context );
 
@@ -48,6 +51,9 @@ class ParticlesView extends GLSurfaceView {
 
         public void onSurfaceCreated( GL10 gl, EGLConfig config )
         {
+        String extensions = GLES20.glGetString(GLES20.GL_EXTENSIONS);
+        Log.v(TAG, extensions);
+         //"GL_OES_texture_float"
         }
     }
 }
