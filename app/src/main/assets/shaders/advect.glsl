@@ -7,11 +7,10 @@ uniform float dissipation;
 uniform vec2 px1;
 varying vec2 uv;
 
-void main(){
-    //vec2 u = texture(VelocityTexture, InverseSize * fragCoord).xy;
-    //vec2 coord = InverseSize * (fragCoord - TimeStep * u);
-    //FragColor = Dissipation * texture(SourceTexture, coord);
 
-    gl_FragColor = texture2D(source, uv-texture2D(velocity, uv).xy*dt*px1)*dissipation;
-
+void main() {
+    vec2 vel = texture2D(velocity, uv).xy;
+    // back in the future coordinates
+    vec2 coords = uv - vel * dt * px1;
+    gl_FragColor = texture2D(source, coords) * dissipation;
 }

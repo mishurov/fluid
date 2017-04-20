@@ -23,18 +23,8 @@ FBO::FBO(int width, int height, GLenum type, GLenum format) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glGenRenderbuffers(1, &depth_);
-
- 	glBindRenderbuffer(GL_RENDERBUFFER, depth_);
-    glRenderbufferStorage(
-		GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width_, height_
-	);
-
 	glFramebufferTexture2D(
 		GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_, 0
-	);
-    glFramebufferRenderbuffer(
-		GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_
 	);
 
 	supported_ = (
@@ -42,7 +32,6 @@ FBO::FBO(int width, int height, GLenum type, GLenum format) {
 	);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	initialized_ = true;

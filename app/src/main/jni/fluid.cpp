@@ -6,46 +6,39 @@
 
 using namespace std;
 
-//int iterations = 32;
 static int iterations = 16;
 static int mouse_force = 1;
-// not used float resolution = 0.5;
 static float cursor_size = 50;
 static float step = 1.0 / 60.0;
-
-//vector<float> fg_color = { 0.16, 0.01, 0.36 };
 static vector<float> fg_color = { 0.0, 0.0, 0.0 };
 static vector<float> bg_color = { 1.0, 1.0, 1.0 };
 
 
-vector<float> ArgbHexStringToRrbVecFloat(string str) {
-	string r_str = str.substr(2,2);
-	string g_str = str.substr(4,2);
-	string b_str = str.substr(6,2);
-	int r_int = (int)strtol(r_str.c_str(), NULL, 16);
-	int g_int = (int)strtol(g_str.c_str(), NULL, 16);
-	int b_int = (int)strtol(b_str.c_str(), NULL, 16);
-	float r = (float) r_int / (float) 255.0;
-	float g = (float) g_int / (float) 255.0;
-	float b = (float) b_int / (float) 255.0;
-	return { r, g, b };
+vector<float> HStringToFloat3(string str) {
+	vector<float> ret = vector<float>();
+	for (int pos = 2; pos < 8; pos += 2 ) {
+		string color_str = str.substr(pos, 2);
+		int color_int = (int) strtol(color_str.c_str(), NULL, 16);
+		float color = (float) color_int / (float) 255.0;
+		ret.push_back(color);
+	}
+	return ret;
 }
+
 
 void FluidSetPrefs(
 	string fg_color_str, string bg_color_str,
 	int iterations_arg, int cursor_size_arg) {
-	fg_color = ArgbHexStringToRrbVecFloat(fg_color_str);
-	bg_color = ArgbHexStringToRrbVecFloat(bg_color_str);
+	fg_color = HStringToFloat3(fg_color_str);
+	bg_color = HStringToFloat3(bg_color_str);
 	iterations = iterations_arg;
 	cursor_size = (float) (cursor_size_arg * 10);
 }
 
-static ComputeKernel advect_velocity;
-static ComputeKernel advect_temperature;
-static ComputeKernel advect_density;
+
+static ComputeKernel advect;
 static ComputeKernel apply_buoyancy;
-static ComputeKernel apply_impulse_temperature;
-static ComputeKernel apply_impulse_density;
+static ComputeKernel apply_impulse;
 static ComputeKernel apply_divergence;
 static ComputeKernel compute_jacobi;
 static ComputeKernel subtract_gradient;
@@ -65,15 +58,9 @@ static float px_x;
 static float px_y;
 
 
-bool HasFloatLuminanceFBOSupport() {
-	FBO fbo(32, 32, GL_FLOAT, GL_LUMINANCE);
-	return fbo.supported();
-}
-
 void FluidInit(int width, int height) {
 	glViewport(0, 0, width, height);
 	glLineWidth(1.0);
-	GLenum format = HasFloatLuminanceFBOSupport() ? GL_LUMINANCE : GL_RGBA;
 	px_x = 1.0 / (float) width;
 	px_y = 1.0 / (float) height;
 	vector<float> px = { px_x, px_y };
@@ -158,12 +145,10 @@ void FluidInit(int width, int height) {
 		}
 	);
 	
-	/* inkling */
-	Shader advect("shaders/kernel.glsl", "shaders/advect.glsl");
+	Shader advect_field("shaders/kernel.glsl", "shaders/advect.glsl");
 	Shader jacobi("shaders/kernel.glsl", "shaders/jacobi.glsl");
 	Shader gradient("shaders/kernel.glsl", "shaders/gradient.glsl");
 	Shader divergence("shaders/kernel.glsl", "shaders/divergence.glsl");
-	Shader impulse("shaders/kernel.glsl", "shaders/splat.glsl");
 	Shader buoyancy("shaders/kernel.glsl", "shaders/buoyancy.glsl");
 	Shader visualize("shaders/kernel.glsl", "shaders/visualize.glsl");
 	Shader add_field("shaders/cursor.glsl", "shaders/add_field.glsl");
@@ -178,8 +163,8 @@ void FluidInit(int width, int height) {
 	temperature_pong = FBO(width, height, GL_FLOAT, GL_RGBA);
 	divergence_pong = FBO(width, height, GL_FLOAT, GL_RGBA);
 
-	advect_velocity = ComputeKernel(
-		advect,
+	advect = ComputeKernel(
+		advect_field,
 		inside,
 		{
 			{"px", {FBO(), px}},
@@ -194,41 +179,7 @@ void FluidInit(int width, int height) {
 		false,
 		false
 	);
-
-	advect_temperature = ComputeKernel(
-		advect,
-		inside,
-		{
-			{"px", {FBO(), px}},
-			{"px1", {FBO(), px1}},
-			{"dissipation", {FBO(), {0.95}}},
-			{"velocity", {velocity_ping, vector<float>()}},
-			{"source", {temperature_ping, vector<float>()}},
-			{"dt", {FBO(), {step}}},
-		},
-		temperature_pong,
-		"",
-		false,
-		false
-	);
-
-	advect_density = ComputeKernel(
-		advect,
-		inside,
-		{
-			{"px", {FBO(), px}},
-			{"px1", {FBO(), px1}},
-			{"dissipation", {FBO(), {1.0}}},
-			{"velocity", {velocity_ping, vector<float>()}},
-			{"source", {density_ping, vector<float>()}},
-			{"dt", {FBO(), {step}}},
-		},
-		density_pong,
-		"",
-		false,
-		false
-	);
-
+	
 	apply_buoyancy = ComputeKernel(
 		buoyancy,
 		all,
@@ -264,7 +215,7 @@ void FluidInit(int width, int height) {
 		}
 	);
 
-	apply_impulse_density = ComputeKernel(
+	apply_impulse = ComputeKernel(
 		add_field,
 		cursor,
 		{
@@ -278,22 +229,7 @@ void FluidInit(int width, int height) {
 		false,
 		false
 	);
-
-	apply_impulse_temperature = ComputeKernel(
-		add_field,
-		cursor,
-		{
-			{"px", {FBO(), px}},
-			{"force", {FBO(), {0.5, 0.2}}},
-			{"center", {FBO(), {0.1, 0.4}}},
-			{"scale", {FBO(), {cursor_size * px_x, cursor_size * px_y}}},
-		},
-		density_ping,
-		"add",
-		false,
-		false
-	);
-
+	
 	apply_divergence = ComputeKernel(
 		divergence,
 		all,
@@ -354,11 +290,13 @@ void FluidInit(int width, int height) {
 	);
 }
 
+
 static float x_0 = 0;
 static float y_0 = 0;
 static float x_1 = 0;
 static float y_1 = 0;
 static bool is_cursor_down = false;
+
 
 void FluidTouch(bool is_down, float x, float y) {
 	is_cursor_down = is_down;
@@ -366,8 +304,10 @@ void FluidTouch(bool is_down, float x, float y) {
 	y_1 = y;
 }
 
+
 static float pi = 3.14159265;
 static vector<float> gravity = {0, 0};
+
 
 void FluidRotate(int angle) {
 	angle += 90;
@@ -375,38 +315,43 @@ void FluidRotate(int angle) {
 	gravity = {(float) cos(theta), (float) sin(theta)};
 }
 
+
 void SwapBuffers(FBO *fbo0, FBO *fbo1) {
 	FBO swap = *fbo0;
 	*fbo0 = *fbo1;
 	*fbo1 = swap;
 }
 
+
 void FluidUpdate(float elapsed_time) {
 	UniformsMap uniforms = {
 		{"source", {velocity_ping, vector<float>()}},
+		{"dissipation", {FBO(), {0.999}}},
 		{"velocity", {velocity_ping, vector<float>()}}
 	};
-    advect_velocity.SetUniforms(uniforms);
-    advect_velocity.SetFBO(velocity_pong);
-	advect_velocity.Run();
+    advect.SetUniforms(uniforms);
+    advect.SetFBO(velocity_pong);
+	advect.Run();
 	SwapBuffers(&velocity_ping, &velocity_pong);
 
 	uniforms = {
 		{"source", {temperature_ping, vector<float>()}},
+		{"dissipation", {FBO(), {0.95}}},
 		{"velocity", {velocity_ping, vector<float>()}}
 	};
-    advect_temperature.SetUniforms(uniforms);
-    advect_temperature.SetFBO(temperature_pong);
-	advect_temperature.Run();
+    advect.SetUniforms(uniforms);
+    advect.SetFBO(temperature_pong);
+	advect.Run();
 	SwapBuffers(&temperature_ping, &temperature_pong);
 
 	uniforms = {
 		{"source", {density_ping, vector<float>()}},
+		{"dissipation", {FBO(), {1.0}}},
 		{"velocity", {velocity_ping, vector<float>()}}
 	};
-    advect_density.SetUniforms(uniforms);
-    advect_density.SetFBO(density_pong);
-	advect_density.Run();
+    advect.SetUniforms(uniforms);
+    advect.SetFBO(density_pong);
+	advect.Run();
 	SwapBuffers(&density_ping, &density_pong);
 	
 	uniforms = {
@@ -449,8 +394,10 @@ void FluidUpdate(float elapsed_time) {
 	} else {
 		force_avg = 0;
 	}
-	// temperature
+	
+	// more radius, less value
 	float size_factor = cursor_size * 0.003;
+
 	UniformsMap module_force = {
 		{"force", {FBO(),
 			{
@@ -460,20 +407,16 @@ void FluidUpdate(float elapsed_time) {
 		}},
 	};
 
-	apply_impulse_density.SetUniforms(force);
-	apply_impulse_density.SetUniforms(module_force);
-    apply_impulse_density.SetFBO(density_ping);
-	apply_impulse_density.Run();
+	apply_impulse.SetUniforms(force);
+    apply_impulse.SetFBO(velocity_ping);
+	apply_impulse.Run();
 
-	apply_impulse_temperature.SetUniforms(force);
-	apply_impulse_temperature.SetUniforms(module_force);
-    apply_impulse_temperature.SetFBO(temperature_ping);
-	apply_impulse_temperature.Run();
+	apply_impulse.SetUniforms(module_force);
+    apply_impulse.SetFBO(density_ping);
+	apply_impulse.Run();
 
-	apply_impulse_temperature.SetUniforms(force);
-    apply_impulse_temperature.SetFBO(velocity_ping);
-	apply_impulse_temperature.Run();
-
+    apply_impulse.SetFBO(temperature_ping);
+	apply_impulse.Run();
 
 	uniforms = {
 		{"velocity", {velocity_ping, vector<float>()}},
@@ -493,6 +436,7 @@ void FluidUpdate(float elapsed_time) {
 		compute_jacobi.Run();
 		SwapBuffers(&pressure_ping, &pressure_pong);
 	}
+
 	uniforms = {
 		{"velocity", {velocity_ping, vector<float>()}},
 		{"pressure", {pressure_ping, vector<float>()}},
@@ -509,6 +453,5 @@ void FluidUpdate(float elapsed_time) {
 	};
     draw.SetUniforms(uniforms);
 	draw.Run();
-
 }
 

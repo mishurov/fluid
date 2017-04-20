@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Fluids</string>
+    <string name="app_name">Inkling</string>
 
     <string name="pref_fg_color_title">Foreground colour</string>
     <string name="pref_fg_color_summary">Colour of the density field</string>
@@ -13,4 +13,13 @@
 
     <string name="pref_cursor_size_title">Cursor size</string>
     <string name="pref_cursor_size_summary">Radius of a cursor: %s</string>
+
+    <string name="dialog_text">
+        The device doesn\'t support \n
+        GL_OES_texture_float extension. \n
+        The app won\'t draw \n
+        anything to the screen.
+    </string>
+
+    <string name="toster_text">Double tap to open settings</string>
 </resources>

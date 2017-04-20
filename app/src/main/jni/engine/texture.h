@@ -10,7 +10,7 @@ class FBO {
 	int height_;
 	GLuint framebuffer_;
 	GLuint texture_;
-	GLuint depth_;
+	//GLuint depth_;
 	int unit_;
 	bool bound_;
 	bool supported_;
