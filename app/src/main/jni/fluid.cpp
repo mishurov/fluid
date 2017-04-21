@@ -16,10 +16,10 @@ static vector<float> bg_color = { 1.0, 1.0, 1.0 };
 
 vector<float> HStringToFloat3(string str) {
 	vector<float> ret = vector<float>();
-	for (int pos = 2; pos < 8; pos += 2 ) {
+	for (int pos = 2; pos <= 6; pos += 2 ) {
 		string color_str = str.substr(pos, 2);
 		int color_int = (int) strtol(color_str.c_str(), NULL, 16);
-		float color = (float) color_int / (float) 255.0;
+		float color = ((float) color_int) / (float) 255.0;
 		ret.push_back(color);
 	}
 	return ret;

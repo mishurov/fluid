@@ -91,34 +91,39 @@ public class ParticlesActivity extends Activity {
 
         // Read and listen preferences
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        passSettings(mPrefs);
         mListener = new OnSharedPreferenceChangeListener() {
             @Override
             public void onSharedPreferenceChanged(
                 SharedPreferences prefs, String key
             ) {
-                passSettings(prefs);
+                ParticlesActivity.this.passSettings(prefs);
             }
         };
         mPrefs.registerOnSharedPreferenceChangeListener(mListener);
 
         // Run native
         sAssetManager = getAssets();
-        ParticlesLib.createAssetManager( sAssetManager );
+        ParticlesLib.createAssetManager(sAssetManager);
         mView = new ParticlesView(this);
         setContentView(mView);
-
+        // Pass settings after lib initialisation
+        passSettings(mPrefs);
         // Toast for settings
         toast.show();
     }
 
     void passSettings(SharedPreferences prefs) {
-        int fgColorPref = prefs.getInt(KEY_PREF_FG_COLOR, 0);
-        int bgColorPref = prefs.getInt(KEY_PREF_BG_COLOR, 0);
-        int iterationsPref = prefs.getInt(KEY_PREF_ITERATIONS, 0);
-        int cursorSizePref = prefs.getInt(KEY_PREF_CURSOR_SIZE, 0);
+        // Defaults are keeped in the layout, can't be read at very first start
+        int fgColorPref = prefs.getInt(KEY_PREF_FG_COLOR, -1);
+        int bgColorPref = prefs.getInt(KEY_PREF_BG_COLOR, -1);
+        int iterationsPref = prefs.getInt(KEY_PREF_ITERATIONS, 16);
+        int cursorSizePref = prefs.getInt(KEY_PREF_CURSOR_SIZE, 10);
         String fgColorStr = Integer.toHexString(fgColorPref);
         String bgColorStr = Integer.toHexString(bgColorPref);
+        if (fgColorPref == -1)
+            fgColorStr = "ff000000";
+        if (bgColorPref == -1)
+            bgColorStr = "ffffffff";
         ParticlesLib.settings(
             fgColorStr, bgColorStr, iterationsPref, cursorSizePref
         );
