@@ -8,7 +8,7 @@ A real time fluid simulation based on the Navier-Stokes equations and computed i
 
 Fluid simulation using OpenGL vertex and fragment shaders.
 
-GLView and asset managements are based and use utils from this document:
+GLView and asset managements are based on and use utils from this document:
 https://software.intel.com/en-us/articles/setting-up-native-opengl-es-on-android-platforms
 
 Engine for fluids is ported from js to cpp from this project:
