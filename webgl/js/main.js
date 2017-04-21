@@ -12,7 +12,8 @@ var Loader = require('engine/loader'),
     ComputeKernel = require('./compute').Kernel;
     debounce = require('utils').debounce,
     glm = require('engine/gl-matrix'),
-    vec2 = glm.vec2;
+    vec2 = glm.vec2,
+    vec3 = glm.vec3;
 
 var canvas = document.getElementById('webGLCanvas'),
     gl = glcontext.initialize(canvas, {
@@ -29,7 +30,7 @@ var canvas = document.getElementById('webGLCanvas'),
         iterations: 32,
         mouse_force: 1,
         resolution: 1,
-        cursor_size: 100,
+        cursor_size: 50,
         step: 1/60
     },
     clock = new Clock(canvas),
@@ -64,8 +65,8 @@ function setup(width, height, singleComponentFboFormat){
 
     var px_x = 1.0/canvas.width,
         px_y = 1.0/canvas.height,
-        px = vec2.create([px_x, px_y]);
-        px1 = vec2.create([1, canvas.width/canvas.height]),
+        px = [px_x, px_y];
+        px1 = [1.0, canvas.width/canvas.height],
         inside = new Mesh(gl, {
             vertex: geometry.screen_quad(1.0-px_x*2.0, 1.0-px_y*2.0),
             attributes: {
@@ -123,35 +124,53 @@ function setup(width, height, singleComponentFboFormat){
                 }
             }
         }),
-        velocityFBO0 = new FBO(gl, width, height, gl.FLOAT),
-        velocityFBO1 = new FBO(gl, width, height, gl.FLOAT),
-        divergenceFBO = new FBO(gl, width, height, gl.FLOAT, singleComponentFboFormat),
-        pressureFBO0 = new FBO(gl, width, height, gl.FLOAT, singleComponentFboFormat),
-        pressureFBO1 = new FBO(gl, width, height, gl.FLOAT, singleComponentFboFormat);
-        var advectVelocityKernel = new ComputeKernel(gl, {
-            shader: shaders.get('kernel', 'advect'),
+
+        advect_field = shaders.get('kernel', 'advect');
+        jacobi = shaders.get('kernel', 'jacobi');
+        gradient = shaders.get('kernel', 'gradient');
+        divergence = shaders.get('kernel', 'divergence');
+        buoyancy = shaders.get('kernel', 'buoyancy');
+        visualize = shaders.get('kernel', 'visualize');
+        add_field = shaders.get('cursor', 'add_field');
+
+        velocity_ping = new FBO(gl, width, height, gl.FLOAT);
+        velocity_pong = new FBO(gl, width, height, gl.FLOAT);
+        density_ping = new FBO(gl, width, height, gl.FLOAT);
+        density_pong = new FBO(gl, width, height, gl.FLOAT);
+        pressure_ping = new FBO(gl, width, height, gl.FLOAT);
+        pressure_pong = new FBO(gl, width, height, gl.FLOAT);
+        temperature_ping = new FBO(gl, width, height, gl.FLOAT);
+        temperature_pong = new FBO(gl, width, height, gl.FLOAT);
+        divergence_pong = new FBO(gl, width, height, gl.FLOAT);
+
+        var advect = new ComputeKernel(gl, {
+            shader: advect_field,
             mesh: inside,
             uniforms: {
                 px: px,
                 px1: px1,
-                scale: 1.0,
-                velocity: velocityFBO0,
-                source: velocityFBO0,
+                scale: 0.999,
+                velocity: velocity_ping,
+                source: velocity_ping,
                 dt: options.step
             },
-            output: velocityFBO1
+            output: velocity_pong
         }),
-        velocityBoundaryKernel = new ComputeKernel(gl, {
-            shader: shaders.get('boundary', 'advect'),
-            mesh: boundary,
+        apply_buoyancy = new ComputeKernel(gl, {
+            shader: buoyancy,
+            mesh: all,
             uniforms: {
+                ambient_temperature: 0.0,
+                sigma: 1.5,
+                kappa: 0.1,
+                velocity: velocity_ping,
+                temperature: temperature_ping,
+                density: density_ping,
                 px: px,
-                scale: -1.0,
-                velocity: velocityFBO0,
-                source: velocityFBO0,
-                dt: 1/60
+                px1: px1,
+                dt: options.step
             },
-            output: velocityFBO1
+            output: velocity_pong
         }),
         cursor = new Mesh(gl, {
             vertex: geometry.screen_quad(px_x*options.cursor_size*2, px_y*options.cursor_size*2),
@@ -159,8 +178,8 @@ function setup(width, height, singleComponentFboFormat){
                 position: {}
             }
         }),
-        addForceKernel = new ComputeKernel(gl, {
-            shader: shaders.get('cursor', 'addForce'),
+        apply_impulse = new ComputeKernel(gl, {
+            shader: add_field,
             mesh: cursor,
             blend: 'add',
             uniforms: {
@@ -169,165 +188,224 @@ function setup(width, height, singleComponentFboFormat){
                 center: vec2.create([0.1, 0.4]),
                 scale: vec2.create([options.cursor_size*px_x, options.cursor_size*px_y])
             },
-            output: velocityFBO1
+            output: temperature_ping
         }),
-        divergenceKernel = new ComputeKernel(gl, {
-            shader: shaders.get('kernel', 'divergence'),
+        apply_divergence = new ComputeKernel(gl, {
+            shader: divergence,
             mesh: all,
             uniforms: {
-                velocity: velocityFBO1,
+                velocity: velocity_ping,
                 px: px
             },
-            output: divergenceFBO
+            output: temperature_ping
         }),
-        jacobiKernel = new ComputeKernel(gl, {
-            shader: shaders.get('kernel', 'jacobi'),
-            // use all so the simulation still works
-            // even if the pressure boundary is not
-            // properly enforced
+        compute_jacobi = new ComputeKernel(gl, {
+            shader: jacobi,
             mesh: all,
-            nounbind: true,
             uniforms: {
-                pressure: pressureFBO0,
-                divergence: divergenceFBO,
+                pressure: pressure_ping,
+                divergence: divergence_pong,
                 alpha: -1.0,
                 beta: 0.25,
                 px: px
             },
-            output: pressureFBO1
+            output: pressure_pong
         }),
-        pressureBoundaryKernel = new ComputeKernel(gl, {
-            shader: shaders.get('boundary', 'jacobi'),
-            mesh: boundary,
-            nounbind: true,
-            nobind: true,
-            uniforms: {
-                pressure: pressureFBO0,
-                divergence: divergenceFBO,
-                alpha: -1.0,
-                beta: 0.25,
-                px: px
-            },
-            output: pressureFBO1
-        }),
-
-        subtractPressureGradientKernel = new ComputeKernel(gl, {
-            shader: shaders.get('kernel', 'subtractPressureGradient'),
+        subtract_gradient = new ComputeKernel(gl, {
+            shader: gradient,
             mesh: all,
             uniforms: {
                 scale: 1.0,
-                pressure: pressureFBO0,
-                velocity: velocityFBO1,
+                pressure: pressure_ping,
+                velocity: velocity_ping,
                 px: px
             },
-            output: velocityFBO0
+            output: velocity_pong
         }),
-        subtractPressureGradientBoundaryKernel = new ComputeKernel(gl, {
-            shader: shaders.get('boundary', 'subtractPressureGradient'),
-            mesh: boundary,
-            uniforms: {
-                scale: -1.0,
-                pressure: pressureFBO0,
-                velocity: velocityFBO1,
-                px: px
-            },
-            output: velocityFBO0
-        }),
-
-
-        drawKernel = new ComputeKernel(gl, {
-            shader: shaders.get('kernel', 'visualize'),
+        draw = new ComputeKernel(gl, {
+            shader: visualize,
             mesh: all,
             uniforms: {
-                velocity: velocityFBO0,
-                pressure: pressureFBO0,
+                sampler: density_ping,
+                fg_color: vec3.create([0.0, 0.0, 0.0]),
+                bg_color: vec3.create([1.0, 1.0, 1.0]),
                 px: px
             },
             output: null
         });
 
-    /*
-    var x0 = input.mouse.x,
-        y0 = input.mouse.y;
-    */
-    var x0 = 10,
-        y0 = 10,
-        x1 = 10,
-        y1 = 10;
 
-    document.addEventListener('mousemove', onMouseUpdate, false);
-    document.addEventListener('mouseenter', onMouseUpdate, false);
+    var x_0 = 0,
+        y_0 = 0,
+        x_1 = 0,
+        y_1 = 0,
+        is_cursor_down = false;
 
-    function onMouseUpdate(e) {
-        x1 = e.pageX;
-        y1 = e.pageY;
+
+    function onMouseDown(e) {
+        x_1 = e.pageX;
+        y_1 = e.pageY;
+        is_cursor_down = true;
     }
-    
-    var fg_color = document.getElementById('fg-color');
-    fg_color.onchange = function( e ) {
+    function onMouseMove(e) {
+        x_1 = e.pageX;
+        y_1 = e.pageY;
+    }
+    function onMouseUp(e) {
+        x_1 = e.pageX;
+        y_1 = e.pageY;
+        is_cursor_down = false;
+    }
+
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    var fg_color_input = document.getElementById('fg-color');
+    fg_color_input.onchange = function( e ) {
       console.log("color");
     };
-    
-    
-    clock.ontick = function(dt){
-        /*
-        var x1 = input.mouse.x * options.resolution,
-            y1 = input.mouse.y * options.resolution,
-        */
-        var xd = x1-x0,
-            yd = y1-y0;
 
-        x0 = x1,
-        y0 = y1;
-        if(x0 === 0 && y0 === 0) xd = yd = 0;
-        advectVelocityKernel.uniforms.dt = options.step*1.0;
-        advectVelocityKernel.run();
+    var fg_color = vec3.create([0.0, 0.0, 0.0]),
+        bg_color = vec3.create([1.0, 1.0, 1.0]);
 
+    function swapBuffers(fbo0, fbo1) {
+      swap = fbo0;
+      fbo0 = fbo1;
+      fbo1 = swap;
+    }
 
-        vec2.set([xd*px_x*options.cursor_size*options.mouse_force,
-                 -yd*px_y*options.cursor_size*options.mouse_force], addForceKernel.uniforms.force);
-        vec2.set([x0*px_x*2-1.0, (y0*px_y*2-1.0)*-1], addForceKernel.uniforms.center);
-        addForceKernel.run();
+    clock.ontick = function(dt) {
+      advect.uniforms.source = velocity_ping;
+      advect.uniforms.dissipation = 0.999;
+      advect.uniforms.velocity = velocity_ping;
+      advect.outputFBO = velocity_pong;
+      advect.run();
 
-        velocityBoundaryKernel.run();
+      swap = velocity_ping;
+      velocity_ping = velocity_pong;
+      velocity_pong = swap;
 
-        divergenceKernel.run();
+      advect.uniforms.source = temperature_ping;
+      advect.uniforms.dissipation = 0.95;
+      advect.uniforms.velocity = velocity_ping;
+      advect.outputFBO = temperature_pong;
+      advect.run();
 
-        var p0 = pressureFBO0,
-            p1 = pressureFBO1,
-            p_ = p0;
-        for(var i = 0; i < options.iterations; i++) {
-            jacobiKernel.uniforms.pressure = pressureBoundaryKernel.uniforms.pressure = p0;
-            jacobiKernel.outputFBO = pressureBoundaryKernel.outputFBO = p1;
-            jacobiKernel.run();
-            pressureBoundaryKernel.run();
-            p_ = p0;
-            p0 = p1;
-            p1 = p_;
-        }
+      swap = temperature_ping;
+      temperature_ping = temperature_pong;
+      temperature_pong = swap;
 
-        subtractPressureGradientKernel.run();
-        subtractPressureGradientBoundaryKernel.run();
+      advect.uniforms.source = density_ping;
+      advect.uniforms.dissipation = 1.0;
+      advect.uniforms.velocity = velocity_ping;
+      advect.outputFBO = density_pong;
+      advect.run();
 
-        drawKernel.run();
+      swap = density_ping;
+      density_ping = density_pong;
+      density_pong = swap;
+
+      apply_buoyancy.uniforms.velocity = velocity_ping;
+      apply_buoyancy.uniforms.temperature = temperature_ping;
+      apply_buoyancy.uniforms.density = density_ping;
+      apply_buoyancy.uniforms.gravity = vec2.create([0.0, 1.0]);
+      apply_buoyancy.outputFBO = velocity_pong;
+      apply_buoyancy.run();
+
+      swap = velocity_ping;
+      velocity_ping = velocity_pong;
+      velocity_pong = swap;
+
+      var xd = x_1 - x_0,
+          yd = y_1 - y_0;
+
+        x_0 = x_1,
+        y_0 = y_1;
+
+      if (!is_cursor_down) {
+        xd = 0;
+        yd = 0;
+      }
+
+      var force = vec2.create([
+        xd * px_x * options.cursor_size * options.mouse_force,
+	-yd * px_y * options.cursor_size * options.mouse_force
+      ]),
+      center = vec2.create([
+        x_0 * px_x * 2 - 1,
+	(y_0 * px_y * 2 - 1) * -1
+      ]),
+      min_d = 15.0,
+      force_avg = Math.abs(xd) + Math.abs(yd);
+
+      if (is_cursor_down) {
+        force_avg = Math.max(min_d, force_avg);
+      } else {
+        force_avg = 0;
+      }
+
+      var size_factor = options.cursor_size * 0.003,
+      module_force = vec2.create([
+        force_avg * px_x * options.mouse_force / size_factor,
+        force_avg * px_y * options.mouse_force / size_factor,
+      ]);
+
+      apply_impulse.uniforms.center = center;
+      apply_impulse.uniforms.force = force;
+      apply_impulse.outputFBO = velocity_ping;
+      apply_impulse.run();
+
+      apply_impulse.uniforms.force = module_force;
+      apply_impulse.outputFBO = density_ping;
+      apply_impulse.run();
+
+      apply_impulse.outputFBO = temperature_ping;
+      apply_impulse.run();
+      
+      apply_divergence.uniforms.velocity = velocity_ping;
+      apply_divergence.outputFBO = divergence_pong;
+      apply_divergence.run();
+
+      for(var i = 0; i < options.iterations; i++) {
+        compute_jacobi.uniforms.divergence = divergence_pong;
+        compute_jacobi.uniforms.pressure = pressure_ping;
+        compute_jacobi.outputFBO = pressure_pong;
+        compute_jacobi.run();
+
+        swap = pressure_ping;
+        pressure_ping = pressure_pong;
+        pressure_pong = swap;
+      }
+
+      subtract_gradient.uniforms.velocity = velocity_ping;
+      subtract_gradient.uniforms.pressure = pressure_ping;
+      subtract_gradient.outputFBO = velocity_pong;
+      subtract_gradient.run();
+
+      swap = velocity_ping;
+      velocity_ping = velocity_pong;
+      velocity_pong = swap;
+
+      draw.uniforms.fg_color = fg_color;
+      draw.uniforms.bg_color = bg_color;
+      draw.uniforms.sampler = density_ping;
+      draw.run();
 
     };
 }
 
-
-
-
 if(gl)
 loader.load([
-            'shaders/advect.frag',
-            'shaders/addForce.frag',
-            'shaders/divergence.frag',
-            'shaders/jacobi.frag',
-            'shaders/subtractPressureGradient.frag',
-            'shaders/visualize.frag',
-            'shaders/cursor.vertex',
-            'shaders/boundary.vertex',
-            'shaders/kernel.vertex'
+            'js/shaders/cursor.glsl',
+            'js/shaders/kernel.glsl',
+            'js/shaders/advect.glsl',
+            'js/shaders/jacobi.glsl',
+            'js/shaders/gradient.glsl',
+            'js/shaders/divergence.glsl',
+            'js/shaders/buoyancy.glsl',
+            'js/shaders/visualize.glsl',
+            'js/shaders/add_field.glsl'
 ], init); 
 
 });

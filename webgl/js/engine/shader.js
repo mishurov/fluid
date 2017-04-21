@@ -141,7 +141,7 @@ exports.Manager = function ShaderManager(gl, resources, options){
     this.resources = resources;
     this.shaders = [];
     options = options || {};
-    this.prefix = options.prefix || 'shaders/';
+    this.prefix = options.prefix || 'js/shaders/';
 };
 exports.Manager.prototype = {
     //prefix: 'shaders/',
@@ -162,8 +162,12 @@ exports.Manager.prototype = {
         if(!frag) {
             frag = vertex;
         }
+        /*
         frag += '.frag';
         vertex += '.vertex';
+        */
+        frag += '.glsl';
+        vertex += '.glsl';
         var key = frag + ';' + vertex;
         if(!(key in this.shaders)){
             this.shaders[key] = new Shader(this.gl, this.getSource(vertex), this.getSource(frag));

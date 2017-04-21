@@ -5,11 +5,11 @@ uniform sampler2D temperature;
 uniform sampler2D density;
 uniform float ambient_temperature;
 uniform float dt;
-uniform float px1;
 uniform float sigma;
 uniform float kappa;
 uniform vec2 gravity;
 varying vec2 uv;
+uniform vec2 px1;
 
 
 void main() {
