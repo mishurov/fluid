@@ -27,7 +27,7 @@ var canvas = document.getElementById('webGLCanvas'),
         }
     }),
     options = {
-        iterations: 32,
+        iterations: 16,
         mouse_force: 1,
         resolution: 1,
         cursor_size: 50,
@@ -173,7 +173,7 @@ function setup(width, height, singleComponentFboFormat){
             output: velocity_pong
         }),
         cursor = new Mesh(gl, {
-            vertex: geometry.screen_quad(px_x*options.cursor_size*2, px_y*options.cursor_size*2),
+            vertex: geometry.screen_quad(px_x*options.cursor_size*4, px_y*options.cursor_size*4),
             attributes: {
                 position: {}
             }
@@ -261,13 +261,39 @@ function setup(width, height, singleComponentFboFormat){
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
 
-    var fg_color_input = document.getElementById('fg-color');
-    fg_color_input.onchange = function( e ) {
-      console.log("color");
-    };
+    function hexToRgb(hex) {
+      var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if (result) {
+        var r = parseInt(result[1], 16)
+            g = parseInt(result[2], 16),
+            b = parseInt(result[3], 16);
+        return [r / 256, g / 256, b / 256];
+      } else {
+        return null
+      }
+    }
 
     var fg_color = vec3.create([0.0, 0.0, 0.0]),
         bg_color = vec3.create([1.0, 1.0, 1.0]);
+
+    var fg_color_input = document.getElementById('fg-color');
+    fg_color_input.onchange = function(e)  {
+      fg_color = vec3.create(hexToRgb(fg_color_input.value));
+    };
+
+    var bg_color_input = document.getElementById('bg-color');
+    bg_color_input.onchange = function(e) {
+      bg_color = vec3.create(hexToRgb(bg_color_input.value));
+    };
+
+    var iterations_val = document.getElementById('iterations-val');
+    var iterations_input = document.getElementById('iterations');
+    iterations_val.innerText = options.iterations;
+    iterations_input.value = options.iterations;
+    iterations_input.onchange = function(e) {
+      options.iterations = parseInt(iterations_input.value);
+      iterations_val.innerText = options.iterations;
+    };
 
     function swapBuffers(fbo0, fbo1) {
       swap = fbo0;
@@ -297,7 +323,7 @@ function setup(width, height, singleComponentFboFormat){
       temperature_pong = swap;
 
       advect.uniforms.source = density_ping;
-      advect.uniforms.dissipation = 1.0;
+      advect.uniforms.dissipation = 0.999;
       advect.uniforms.velocity = velocity_ping;
       advect.outputFBO = density_pong;
       advect.run();

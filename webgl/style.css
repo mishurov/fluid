@@ -1,0 +1,13 @@
+body {
+  background-color: #eee;
+}
+
+.screen,
+.controls {
+  float: left;
+  padding: 10px;
+}
+
+.screen {
+  cursor: default;
+}

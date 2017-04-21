@@ -3,13 +3,29 @@
 <head>
     <title> WebGL </title>
     <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="style.css">
     <script data-main="js/main" src="js/lib/require.js"></script>
 </head>
 <body>
-    <canvas id="webGLCanvas" width="400" height="600"></canvas>
-    <input id="bg-color" class="jscolor" value="ffffff">
-    <input id="fg-color" class="jscolor" value="000000">
-    <input type="range" id="iterations" min="4" max="32" >
-    <input type="range" id="radius" min="5" max="20" >
+    <div class="screen">
+        <canvas id="webGLCanvas" width="400" height="600"></canvas>
+    </div>
+    <div class="controls">
+        <span>Background colour</span><br>
+        <input id="bg-color" class="jscolor" value="ffffff">
+        <br><br>
+        <span>Foreground colour</span>
+        <br>
+        <input id="fg-color" class="jscolor" value="000000">
+        <br><br>
+        <span>Jacobi iterations</span>
+        <br>
+        <span id="iterations-val"></span>
+        <input type="range" id="iterations" min="4" max="32" >
+        <p>
+            <a href="#">Source code</a>
+            <a href="#">Android app</a>
+        </p>
+    </div>
 </body>
 </html>
