@@ -26,7 +26,7 @@ ComputeKernel.prototype.run = function(){
     this.shader.use();
     this.shader.uniforms(this.uniforms);
     if(this.blend === 'add'){
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE);
+        this.gl.blendFunc(this.gl.SRC_COLOR, this.gl.ONE);
         this.gl.enable(this.gl.BLEND);
     }
     else {

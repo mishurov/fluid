@@ -7,10 +7,16 @@ uniform float dissipation;
 uniform vec2 px1;
 varying vec2 uv;
 
+#include "converse.glsl"
 
 void main() {
-    vec2 vel = texture2D(velocity, uv).xy;
+    vec4 v_c = texture2D(velocity, uv);
+    vec2 v = unpack(v_c);
+
     // back in the future coordinates
-    vec2 coords = uv - vel * dt * px1;
-    gl_FragColor = texture2D(source, coords) * dissipation;
+    vec2 coords = uv - v * dt * px1;
+    vec4 s_c = texture2D(source, coords);
+    vec2 s = unpack(s_c);
+    vec2 res = s * dissipation;
+    gl_FragColor = pack(res);
 }

@@ -133,15 +133,17 @@ function setup(width, height, singleComponentFboFormat){
         visualize = shaders.get('kernel', 'visualize');
         add_field = shaders.get('cursor', 'add_field');
 
-        velocity_ping = new FBO(gl, width, height, gl.FLOAT);
-        velocity_pong = new FBO(gl, width, height, gl.FLOAT);
-        density_ping = new FBO(gl, width, height, gl.FLOAT);
-        density_pong = new FBO(gl, width, height, gl.FLOAT);
-        pressure_ping = new FBO(gl, width, height, gl.FLOAT);
-        pressure_pong = new FBO(gl, width, height, gl.FLOAT);
-        temperature_ping = new FBO(gl, width, height, gl.FLOAT);
-        temperature_pong = new FBO(gl, width, height, gl.FLOAT);
-        divergence_pong = new FBO(gl, width, height, gl.FLOAT);
+        fmt = gl.UNSIGNED_BYTE;
+
+        velocity_ping = new FBO(gl, width, height, fmt);
+        velocity_pong = new FBO(gl, width, height, fmt);
+        density_ping = new FBO(gl, width, height, fmt);
+        density_pong = new FBO(gl, width, height, fmt);
+        pressure_ping = new FBO(gl, width, height, fmt);
+        pressure_pong = new FBO(gl, width, height, fmt);
+        temperature_ping = new FBO(gl, width, height, fmt);
+        temperature_pong = new FBO(gl, width, height, fmt);
+        divergence_pong = new FBO(gl, width, height, fmt);
 
         var advect = new ComputeKernel(gl, {
             shader: advect_field,
@@ -423,6 +425,7 @@ function setup(width, height, singleComponentFboFormat){
 
 if(gl)
 loader.load([
+            'js/shaders/converse.glsl',
             'js/shaders/cursor.glsl',
             'js/shaders/kernel.glsl',
             'js/shaders/advect.glsl',
