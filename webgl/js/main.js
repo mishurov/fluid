@@ -131,7 +131,7 @@ function setup(width, height, singleComponentFboFormat){
         divergence = shaders.get('kernel', 'divergence');
         buoyancy = shaders.get('kernel', 'buoyancy');
         visualize = shaders.get('kernel', 'visualize');
-        add_field = shaders.get('cursor', 'add_field');
+        add_field = shaders.get('kernel', 'add_field');
 
         fmt = gl.UNSIGNED_BYTE;
 
@@ -182,10 +182,11 @@ function setup(width, height, singleComponentFboFormat){
         }),
         apply_impulse = new ComputeKernel(gl, {
             shader: add_field,
-            mesh: cursor,
-            blend: 'add',
+            mesh: all,
+            //blend: 'add',
             uniforms: {
                 px: px,
+                source: velocity_pong,
                 force: vec2.create([0.5, 0.2]),
                 center: vec2.create([0.1, 0.4]),
                 scale: vec2.create([options.cursor_size*px_x, options.cursor_size*px_y])
@@ -361,8 +362,8 @@ function setup(width, height, singleComponentFboFormat){
 	-yd * px_y * options.cursor_size * options.mouse_force
       ]),
       center = vec2.create([
-        x_0 * px_x * 2 - 1,
-	(y_0 * px_y * 2 - 1) * -1
+        x_0 * px_x,
+	(1 - y_0 * px_y)
       ]),
       min_d = 15.0,
       force_avg = Math.abs(xd) + Math.abs(yd);
@@ -381,16 +382,30 @@ function setup(width, height, singleComponentFboFormat){
 
       apply_impulse.uniforms.center = center;
       apply_impulse.uniforms.force = force;
-      apply_impulse.outputFBO = velocity_ping;
+      apply_impulse.uniforms.source = velocity_ping;
+      apply_impulse.outputFBO = velocity_pong;
       apply_impulse.run();
+      swap = velocity_ping;
+      velocity_ping = velocity_pong;
+      velocity_pong = swap;
 
       apply_impulse.uniforms.force = module_force;
-      apply_impulse.outputFBO = density_ping;
+      apply_impulse.uniforms.source = density_ping;
+      apply_impulse.outputFBO = density_pong;
       apply_impulse.run();
+      swap = density_ping;
+      density_ping = density_pong;
+      density_pong = swap;
 
-      apply_impulse.outputFBO = temperature_ping;
+      apply_impulse.uniforms.source = temperature_ping;
+      apply_impulse.outputFBO = temperature_pong;
       apply_impulse.run();
-      
+      swap = temperature_ping;
+      temperature_ping = temperature_pong;
+      temperature_pong = swap;
+
+
+
       apply_divergence.uniforms.velocity = velocity_ping;
       apply_divergence.outputFBO = divergence_pong;
       apply_divergence.run();

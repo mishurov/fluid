@@ -1,11 +1,12 @@
 
 // clamping range
-float half_range = 1.5;
+float half_range = 1.;
+float epsilon = 0.000001;
 
 
 vec4 pack(in vec2 val) {
-    val.x = clamp(-half_range, half_range, val.x);
-    val.y = clamp(-half_range, half_range, val.y);
+    val.x = clamp(-half_range+epsilon, half_range-epsilon, val.x);
+    val.y = clamp(-half_range+epsilon, half_range-epsilon, val.y);
     float min = -half_range;
     float max = half_range;
 

@@ -1,15 +1,20 @@
 precision highp float;
 
 uniform vec2 force;
-uniform vec2 center;
 uniform vec2 scale;
 uniform vec2 px;
 varying vec2 uv;
+uniform sampler2D source;
+uniform vec2 center;
 
 #include "converse.glsl"
 
 void main() {
-    float dist = 1.0 - min(length((uv - center) / scale), 1.0);
-    vec2 res = force * dist;
-    gl_FragColor = pack(res);
+    vec4 s_c = texture2D(source, uv);
+    vec2 s = unpack(s_c);
+
+    float dist = 1.0-min(length((uv - center) / scale), 1.0);
+    //s = vec2(0.5, 0.5);
+    s += force * dist;
+    gl_FragColor = pack(s);
 }
