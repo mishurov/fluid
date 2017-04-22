@@ -151,7 +151,7 @@ function setup(width, height, singleComponentFboFormat){
             uniforms: {
                 px: px,
                 px1: px1,
-                scale: 0.999,
+                dissipation: 0.999,
                 velocity: velocity_ping,
                 source: velocity_ping,
                 dt: options.step
@@ -162,8 +162,8 @@ function setup(width, height, singleComponentFboFormat){
             shader: buoyancy,
             mesh: all,
             uniforms: {
-                ambient_temperature: 0.0,
-                sigma: 1.5,
+                ambient_temperature: 0.01,
+                sigma: 2.5,
                 kappa: 0.1,
                 velocity: velocity_ping,
                 temperature: temperature_ping,
@@ -306,7 +306,7 @@ function setup(width, height, singleComponentFboFormat){
 
     clock.ontick = function(dt) {
       advect.uniforms.source = velocity_ping;
-      advect.uniforms.dissipation = 0.999;
+      advect.uniforms.dissipation = 0.99;
       advect.uniforms.velocity = velocity_ping;
       advect.outputFBO = velocity_pong;
       advect.run();
@@ -316,14 +316,10 @@ function setup(width, height, singleComponentFboFormat){
       velocity_pong = swap;
 
       advect.uniforms.source = temperature_ping;
-      advect.uniforms.dissipation = 0.95;
+      advect.uniforms.dissipation = 0.99;
       advect.uniforms.velocity = velocity_ping;
       advect.outputFBO = temperature_pong;
       advect.run();
-
-      swap = temperature_ping;
-      temperature_ping = temperature_pong;
-      temperature_pong = swap;
 
       advect.uniforms.source = density_ping;
       advect.uniforms.dissipation = 0.999;
@@ -331,20 +327,12 @@ function setup(width, height, singleComponentFboFormat){
       advect.outputFBO = density_pong;
       advect.run();
 
-      swap = density_ping;
-      density_ping = density_pong;
-      density_pong = swap;
-
       apply_buoyancy.uniforms.velocity = velocity_ping;
-      apply_buoyancy.uniforms.temperature = temperature_ping;
-      apply_buoyancy.uniforms.density = density_ping;
+      apply_buoyancy.uniforms.temperature = temperature_pong;
+      apply_buoyancy.uniforms.density = density_pong;
       apply_buoyancy.uniforms.gravity = vec2.create([0.0, 1.0]);
       apply_buoyancy.outputFBO = velocity_pong;
       apply_buoyancy.run();
-
-      swap = velocity_ping;
-      velocity_ping = velocity_pong;
-      velocity_pong = swap;
 
       var xd = x_1 - x_0,
           yd = y_1 - y_0;
@@ -365,7 +353,7 @@ function setup(width, height, singleComponentFboFormat){
         x_0 * px_x,
 	(1 - y_0 * px_y)
       ]),
-      min_d = 15.0,
+      min_d = 4.0,
       force_avg = Math.abs(xd) + Math.abs(yd);
 
       if (is_cursor_down) {
@@ -374,7 +362,7 @@ function setup(width, height, singleComponentFboFormat){
         force_avg = 0;
       }
 
-      var size_factor = options.cursor_size * 0.003,
+      var size_factor = options.cursor_size * 0.005,
       module_force = vec2.create([
         force_avg * px_x * options.mouse_force / size_factor,
         force_avg * px_y * options.mouse_force / size_factor,
@@ -382,43 +370,31 @@ function setup(width, height, singleComponentFboFormat){
 
       apply_impulse.uniforms.center = center;
       apply_impulse.uniforms.force = force;
-      apply_impulse.uniforms.source = velocity_ping;
-      apply_impulse.outputFBO = velocity_pong;
+      apply_impulse.uniforms.source = velocity_pong;
+      apply_impulse.outputFBO = velocity_ping;
       apply_impulse.run();
-      swap = velocity_ping;
-      velocity_ping = velocity_pong;
-      velocity_pong = swap;
 
       apply_impulse.uniforms.force = module_force;
-      apply_impulse.uniforms.source = density_ping;
-      apply_impulse.outputFBO = density_pong;
+      apply_impulse.uniforms.source = density_pong;
+      apply_impulse.outputFBO = density_ping;
       apply_impulse.run();
-      swap = density_ping;
-      density_ping = density_pong;
-      density_pong = swap;
 
-      apply_impulse.uniforms.source = temperature_ping;
-      apply_impulse.outputFBO = temperature_pong;
+      apply_impulse.uniforms.source = temperature_pong;
+      apply_impulse.outputFBO = temperature_ping;
       apply_impulse.run();
-      swap = temperature_ping;
-      temperature_ping = temperature_pong;
-      temperature_pong = swap;
-
-
 
       apply_divergence.uniforms.velocity = velocity_ping;
       apply_divergence.outputFBO = divergence_pong;
       apply_divergence.run();
 
       for(var i = 0; i < options.iterations; i++) {
+        swap = pressure_ping;
+        pressure_ping = pressure_pong;
+        pressure_pong = swap;
         compute_jacobi.uniforms.divergence = divergence_pong;
         compute_jacobi.uniforms.pressure = pressure_ping;
         compute_jacobi.outputFBO = pressure_pong;
         compute_jacobi.run();
-
-        swap = pressure_ping;
-        pressure_ping = pressure_pong;
-        pressure_pong = swap;
       }
 
       subtract_gradient.uniforms.velocity = velocity_ping;

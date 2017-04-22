@@ -20,6 +20,7 @@ void main() {
     vec4 v_c = texture2D(velocity, uv);
     vec2 v = unpack(v_c);
 
+
     gl_FragColor = pack(v);
 
     if (t > ambient_temperature) {

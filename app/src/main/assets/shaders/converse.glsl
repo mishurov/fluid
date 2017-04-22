@@ -1,6 +1,6 @@
 
 // clamping range
-float half_range = 1.;
+float half_range = 1.0;
 float epsilon = 0.000001;
 
 
