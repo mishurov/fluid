@@ -9,7 +9,7 @@ varying vec2 uv;
 
 void main() {
     vec4 l_c = texture2D(sampler, uv);
-    float l = unpack1(l_c);
+    float l = unpackFloatTo4bytes(l_c);
 
     vec3 fill_color = mix(bg_color, fg_color, l);
     gl_FragColor = vec4(fill_color, 1.0);
