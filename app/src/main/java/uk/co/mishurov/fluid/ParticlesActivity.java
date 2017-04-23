@@ -116,7 +116,7 @@ public class ParticlesActivity extends Activity {
         // Defaults are keeped in the layout, can't be read at very first start
         int fgColorPref = prefs.getInt(KEY_PREF_FG_COLOR, -1);
         int bgColorPref = prefs.getInt(KEY_PREF_BG_COLOR, -1);
-        int iterationsPref = prefs.getInt(KEY_PREF_ITERATIONS, 16);
+        int iterationsPref = prefs.getInt(KEY_PREF_ITERATIONS, 8);
         int cursorSizePref = prefs.getInt(KEY_PREF_CURSOR_SIZE, 10);
         String fgColorStr = Integer.toHexString(fgColorPref);
         String bgColorStr = Integer.toHexString(bgColorPref);

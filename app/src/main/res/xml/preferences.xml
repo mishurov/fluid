@@ -12,7 +12,7 @@
         android:summary="@string/pref_bg_color_summary"
         android:defaultValue="0xffffffff" />
     <uk.co.mishurov.fluid.NumberPickerPreference
-            android:defaultValue="16"
+            android:defaultValue="8"
             android:key="pref_iterations"
             android:title="@string/pref_iterations_title"
             android:summary="@string/pref_iterations_summary"
