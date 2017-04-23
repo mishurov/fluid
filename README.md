@@ -20,4 +20,5 @@ The ported version isn't perfectly memory efficient because I allocate unnecessa
 
 I added density and temperature fields, added buoyancy calculations, removed boundary calculations.
 
-The drawback is that it uses float textures, they are not supported in  Open GL ES 2.0, it uses GL_OES_texture_float extension which may not be suported on some devices. I'm working on packing float vector data to unsigned byte RGBA texture.
+I wrote functions to pack floats to 4 unsigned byte texture in order to get rid of GL_OES_texture_float depenency.
+
