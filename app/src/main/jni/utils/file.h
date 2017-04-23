@@ -30,8 +30,15 @@
 #ifndef __FILE_H__
 #define __FILE_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Read the contents of the give file return the content and the file size
 void ReadFile( const char* FileName, char** Content, unsigned int* Size );
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif // __FILE_H__

@@ -2,8 +2,6 @@ precision highp float;
 
 uniform sampler2D pressure;
 uniform sampler2D velocity;
-uniform float alpha;
-uniform float beta;
 uniform float scale;
 uniform vec2 px;
 varying vec2 uv;

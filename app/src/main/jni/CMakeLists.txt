@@ -16,6 +16,7 @@ add_library(
     engine/geometry.cpp
     engine/shader.cpp
     engine/texture.cpp
+    engine/log.cpp
     utils/file.c
     utils/shader.c
     utils/log.c

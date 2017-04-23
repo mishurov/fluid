@@ -92,7 +92,7 @@ function setup(width, height) {
     pressure_pong = new FBO(gl, width, height, format),
     temperature_ping = new FBO(gl, width, height, format),
     temperature_pong = new FBO(gl, width, height, format),
-    divergence_pong = new FBO(gl, width, height, format);
+    divergence_ping = new FBO(gl, width, height, format);
 
   var fill_zeroes = new ComputeKernel(gl, {
       shader: fill_packed_zeroes,
@@ -160,7 +160,7 @@ function setup(width, height) {
       mesh: all,
       uniforms: {
         pressure: pressure_ping,
-        divergence: divergence_pong,
+        divergence: divergence_ping,
         alpha: -1.0,
         beta: 0.25,
         px: px
@@ -300,7 +300,7 @@ function setup(width, height) {
     advect.run();
 
     apply_buoyancy.uniforms.velocity = velocity_ping;
-    apply_buoyancy.uniforms.temperature = temperature_ping;
+    apply_buoyancy.uniforms.temperature = temperature_pong;
     apply_buoyancy.uniforms.density = density_pong;
     apply_buoyancy.uniforms.gravity = vec2.create([0.0, 1.0]);
     apply_buoyancy.outputFBO = velocity_pong;
@@ -323,7 +323,7 @@ function setup(width, height) {
     ]),
     center = vec2.create([
       x_0 * px_x,
-      (1 - y_0 * px_y)
+      1 - y_0 * px_y
     ]),
 
     // Uniform force for the scalar fields
@@ -364,14 +364,14 @@ function setup(width, height) {
     impulse.run();
 
     apply_divergence.uniforms.velocity = velocity_ping;
-    apply_divergence.outputFBO = divergence_pong;
+    apply_divergence.outputFBO = divergence_ping;
     apply_divergence.run();
 
     for(var i = 0; i < options.iterations; i++) {
       swap = pressure_ping;
       pressure_ping = pressure_pong;
       pressure_pong = swap;
-      compute_jacobi.uniforms.divergence = divergence_pong;
+      compute_jacobi.uniforms.divergence = divergence_ping;
       compute_jacobi.uniforms.pressure = pressure_ping;
       compute_jacobi.outputFBO = pressure_pong;
       compute_jacobi.run();

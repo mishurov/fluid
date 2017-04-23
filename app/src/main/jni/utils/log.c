@@ -40,4 +40,3 @@ void Log( char* String )
     return;
 }
 
-

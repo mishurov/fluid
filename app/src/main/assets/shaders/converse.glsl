@@ -3,7 +3,7 @@
 const float HALF_RANGE = 1.1;
 const float MIN_RANGE = -HALF_RANGE;
 const float MAX_RANGE = HALF_RANGE;
-// fix clamp values out of range
+// fix maping values out of precision
 const float EPSILON = 0.0000001;
 
 float clampToRange(in float val) {

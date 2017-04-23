@@ -72,10 +72,12 @@ class ParticlesView extends GLSurfaceView {
 
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
             // Alert if a device doesn't support floating point extension
+            /*
             String extensions = GLES20.glGetString(GLES20.GL_EXTENSIONS);
             String texture_float = "GL_OES_texture_float";
             if (!extensions.toLowerCase().contains(texture_float.toLowerCase()))
                 mParentView.showAlert();
+            */
         }
     }
 }

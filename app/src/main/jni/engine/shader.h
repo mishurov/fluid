@@ -4,10 +4,10 @@
 #include <string>
 #include <map>
 #include <vector>
-#include "../utils/shader.h"
+#include "../utils/file.h"
+#include "log.h"
 #include "texture.h"
 
-#include <android/log.h>
 
 using namespace std;
 
@@ -22,10 +22,11 @@ class Shader {
 
 	void PrepareUniforms(const UniformsMap& values);
 	GLuint GetUniformLocation(string name);
-
+	GLuint CompileShader(string path, GLenum type);
+	GLuint CreateProgram(string vertex_path, string fragment_path);
 public:
 	Shader();
-	Shader(const char* vertex_path, const char* fragment_path);
+	Shader(string vertex_path, string fragment_path);
 	void Use();
 	void Uniforms(const UniformsMap& values);
 	GLuint GetAttribLocation(string name);

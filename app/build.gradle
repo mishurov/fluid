@@ -7,14 +7,14 @@ android {
         applicationId "uk.co.mishurov.fluid"
         minSdkVersion 21
         targetSdkVersion 25
-        versionCode 2
-        versionName "1.0"
+        versionCode 3
+        versionName "1.1"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
                 targets "particles"
                 //abiFilters "x86"
-                //abiFilters "armeabi-v7a"
+                abiFilters "armeabi-v7a"
                 //abiFilters "x86_64", "armeabi-v7a", "x86_64", "armeabi", "arm64-v8a", "x86", "mips", "mips64"
                 //abiFilters "x86_64"
             }

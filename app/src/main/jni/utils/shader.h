@@ -35,14 +35,18 @@
 GLuint LoadCompileVertexShader( const char* ShaderFileName );
 GLuint LoadCompileFragmentShader( const char* ShaderFileName );
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
 GLuint CreateProgram(const char* vertexShaderPath, const char* fragmentShaderPath);
+
 
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif // __SHADER_H__
