@@ -134,6 +134,7 @@ function setup(width, height, singleComponentFboFormat){
         visualize = shaders.get('kernel', 'visualize');
         add_field = shaders.get('kernel', 'add_field');
         add_scalar = shaders.get('kernel', 'add_scalar');
+        fill = shaders.get('kernel', 'fill');
 
         fmt = gl.UNSIGNED_BYTE;
 
@@ -147,7 +148,14 @@ function setup(width, height, singleComponentFboFormat){
         temperature_pong = new FBO(gl, width, height, fmt);
         divergence_pong = new FBO(gl, width, height, fmt);
 
-        var advect = new ComputeKernel(gl, {
+        var fill_constant = new ComputeKernel(gl, {
+            shader: fill,
+            mesh: all,
+            uniforms: {
+            },
+            output: velocity_pong
+        }),
+        advect = new ComputeKernel(gl, {
             shader: advect_field,
             mesh: inside,
             uniforms: {
@@ -263,6 +271,15 @@ function setup(width, height, singleComponentFboFormat){
             },
             output: null
         });
+
+    fill_constant.outputFBO = temperature_ping;
+    fill_constant.run();
+    fill_constant.outputFBO = temperature_pong;
+    fill_constant.run();
+    fill_constant.outputFBO = density_ping;
+    fill_constant.run();
+    fill_constant.outputFBO = density_pong;
+    fill_constant.run();
 
 
     var x_0 = 0,
@@ -380,7 +397,7 @@ function setup(width, height, singleComponentFboFormat){
         x_0 * px_x,
 	(1 - y_0 * px_y)
       ]),
-      min_d = 8.0,
+      min_d = 7.0,
       force_avg = Math.abs(xd) + Math.abs(yd);
 
       if (is_cursor_down) {
@@ -389,7 +406,7 @@ function setup(width, height, singleComponentFboFormat){
         force_avg = 0;
       }
 
-      var size_factor = options.cursor_size * 0.004,
+      var size_factor = options.cursor_size * 0.007,
       module_force = vec2.create([
         force_avg * px_x * options.mouse_force / size_factor,
         force_avg * px_y * options.mouse_force / size_factor,
@@ -455,7 +472,8 @@ loader.load([
             'js/shaders/buoyancy.glsl',
             'js/shaders/visualize.glsl',
             'js/shaders/add_field.glsl',
-            'js/shaders/add_scalar.glsl'
+            'js/shaders/add_scalar.glsl',
+            'js/shaders/fill.glsl'
 ], init); 
 
 });

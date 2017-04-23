@@ -26,7 +26,7 @@ void main() {
     if (t > ambient_temperature) {
         vec4 d_c = texture2D(density, uv);
         float d = unpack1(d_c);
-        v += (dt * px1 * (t - ambient_temperature) * sigma - abs(d) * kappa) * gravity;
+        v += (dt * px1 * (t - ambient_temperature) * sigma - d * kappa) * gravity;
         gl_FragColor = pack2(v);
     }
 }
