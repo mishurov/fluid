@@ -126,12 +126,14 @@ function setup(width, height, singleComponentFboFormat){
         }),
 
         advect_field = shaders.get('kernel', 'advect');
+        advect_scalar = shaders.get('kernel', 'advect_scalar');
         jacobi = shaders.get('kernel', 'jacobi');
         gradient = shaders.get('kernel', 'gradient');
         divergence = shaders.get('kernel', 'divergence');
         buoyancy = shaders.get('kernel', 'buoyancy');
         visualize = shaders.get('kernel', 'visualize');
         add_field = shaders.get('kernel', 'add_field');
+        add_scalar = shaders.get('kernel', 'add_scalar');
 
         fmt = gl.UNSIGNED_BYTE;
 
@@ -158,13 +160,27 @@ function setup(width, height, singleComponentFboFormat){
             },
             output: velocity_pong
         }),
+        advect_sc = new ComputeKernel(gl, {
+            shader: advect_scalar,
+            mesh: all,
+            uniforms: {
+                px: px,
+                px1: px1,
+                dissipation: 0.999,
+                velocity: velocity_ping,
+                source: velocity_ping,
+                dt: options.step
+            },
+            output: velocity_pong
+        }),
         apply_buoyancy = new ComputeKernel(gl, {
             shader: buoyancy,
             mesh: all,
             uniforms: {
-                ambient_temperature: 0.01,
-                sigma: 2.5,
-                kappa: 0.1,
+                ambient_temperature: 0.0,
+                sigma: 1.5,
+                kappa: 0.05,
+                gravity: vec2.create([0.0, 0.0]),
                 velocity: velocity_ping,
                 temperature: temperature_ping,
                 density: density_ping,
@@ -183,10 +199,21 @@ function setup(width, height, singleComponentFboFormat){
         apply_impulse = new ComputeKernel(gl, {
             shader: add_field,
             mesh: all,
-            //blend: 'add',
             uniforms: {
                 px: px,
                 source: velocity_pong,
+                force: vec2.create([0.5, 0.2]),
+                center: vec2.create([0.1, 0.4]),
+                scale: vec2.create([options.cursor_size*px_x, options.cursor_size*px_y])
+            },
+            output: temperature_ping
+        }),
+        apply_scalar_impulse = new ComputeKernel(gl, {
+            shader: add_scalar,
+            mesh: all,
+            uniforms: {
+                px: px,
+                source: density_pong,
                 force: vec2.create([0.5, 0.2]),
                 center: vec2.create([0.1, 0.4]),
                 scale: vec2.create([options.cursor_size*px_x, options.cursor_size*px_y])
@@ -315,20 +342,20 @@ function setup(width, height, singleComponentFboFormat){
       velocity_ping = velocity_pong;
       velocity_pong = swap;
 
-      advect.uniforms.source = temperature_ping;
-      advect.uniforms.dissipation = 0.99;
-      advect.uniforms.velocity = velocity_ping;
-      advect.outputFBO = temperature_pong;
-      advect.run();
+      advect_sc.uniforms.source = temperature_ping;
+      advect_sc.uniforms.dissipation = 0.95;
+      advect_sc.uniforms.velocity = velocity_ping;
+      advect_sc.outputFBO = temperature_pong;
+      advect_sc.run();
 
-      advect.uniforms.source = density_ping;
-      advect.uniforms.dissipation = 0.999;
-      advect.uniforms.velocity = velocity_ping;
-      advect.outputFBO = density_pong;
-      advect.run();
+      advect_sc.uniforms.source = density_ping;
+      advect_sc.uniforms.dissipation = 0.999;
+      advect_sc.uniforms.velocity = velocity_ping;
+      advect_sc.outputFBO = density_pong;
+      advect_sc.run();
 
       apply_buoyancy.uniforms.velocity = velocity_ping;
-      apply_buoyancy.uniforms.temperature = temperature_pong;
+      apply_buoyancy.uniforms.temperature = temperature_ping;
       apply_buoyancy.uniforms.density = density_pong;
       apply_buoyancy.uniforms.gravity = vec2.create([0.0, 1.0]);
       apply_buoyancy.outputFBO = velocity_pong;
@@ -353,7 +380,7 @@ function setup(width, height, singleComponentFboFormat){
         x_0 * px_x,
 	(1 - y_0 * px_y)
       ]),
-      min_d = 4.0,
+      min_d = 8.0,
       force_avg = Math.abs(xd) + Math.abs(yd);
 
       if (is_cursor_down) {
@@ -362,7 +389,7 @@ function setup(width, height, singleComponentFboFormat){
         force_avg = 0;
       }
 
-      var size_factor = options.cursor_size * 0.005,
+      var size_factor = options.cursor_size * 0.004,
       module_force = vec2.create([
         force_avg * px_x * options.mouse_force / size_factor,
         force_avg * px_y * options.mouse_force / size_factor,
@@ -374,14 +401,15 @@ function setup(width, height, singleComponentFboFormat){
       apply_impulse.outputFBO = velocity_ping;
       apply_impulse.run();
 
-      apply_impulse.uniforms.force = module_force;
-      apply_impulse.uniforms.source = density_pong;
-      apply_impulse.outputFBO = density_ping;
-      apply_impulse.run();
+      apply_scalar_impulse.uniforms.center = center;
+      apply_scalar_impulse.uniforms.force = module_force;
+      apply_scalar_impulse.uniforms.source = density_pong;
+      apply_scalar_impulse.outputFBO = density_ping;
+      apply_scalar_impulse.run();
 
-      apply_impulse.uniforms.source = temperature_pong;
-      apply_impulse.outputFBO = temperature_ping;
-      apply_impulse.run();
+      apply_scalar_impulse.uniforms.source = temperature_pong;
+      apply_scalar_impulse.outputFBO = temperature_ping;
+      apply_scalar_impulse.run();
 
       apply_divergence.uniforms.velocity = velocity_ping;
       apply_divergence.outputFBO = divergence_pong;
@@ -420,12 +448,14 @@ loader.load([
             'js/shaders/cursor.glsl',
             'js/shaders/kernel.glsl',
             'js/shaders/advect.glsl',
+            'js/shaders/advect_scalar.glsl',
             'js/shaders/jacobi.glsl',
             'js/shaders/gradient.glsl',
             'js/shaders/divergence.glsl',
             'js/shaders/buoyancy.glsl',
             'js/shaders/visualize.glsl',
-            'js/shaders/add_field.glsl'
+            'js/shaders/add_field.glsl',
+            'js/shaders/add_scalar.glsl'
 ], init); 
 
 });

@@ -11,9 +11,9 @@ uniform vec2 center;
 
 void main() {
     vec4 s_c = texture2D(source, uv);
-    vec2 s = unpack2(s_c);
+    float s = unpack1(s_c);
 
     float dist = 1.0-min(length((uv - center) / scale), 1.0);
-    s += force * dist;
-    gl_FragColor = pack2(s);
+    s += (force * dist).x;
+    gl_FragColor = pack1(s);
 }

@@ -14,11 +14,11 @@ void main() {
     vec4 y0_c = texture2D(velocity, uv-vec2(0, px.y));
     vec4 y1_c = texture2D(velocity, uv+vec2(0, px.y));
 
-    float x0 = unpack(x0_c).x;
-    float x1 = unpack(x1_c).x;
-    float y0 = unpack(y0_c).y;
-    float y1 = unpack(y1_c).y;
+    float x0 = unpack2(x0_c).x;
+    float x1 = unpack2(x1_c).x;
+    float y0 = unpack2(y0_c).y;
+    float y1 = unpack2(y1_c).y;
 
     float divergence = (x1 - x0 + y1 - y0) * 0.5;
-    gl_FragColor = pack(vec2(divergence, divergence));
+    gl_FragColor = pack1(divergence);
 }
