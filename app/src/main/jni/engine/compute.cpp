@@ -74,6 +74,10 @@ void ComputeKernel::SetFBO(FBO fbo) {
 	outputFBO_ = fbo;
 }
 
+void ComputeKernel::SetMesh(Mesh mesh) {
+	mesh_ = mesh;
+}
+
 void ComputeKernel::SwapBuffer(string fbo_name) {
 	for (UniformsMap::iterator it = uniforms_.begin();
 	  it != uniforms_.end();

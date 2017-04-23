@@ -54,8 +54,27 @@ static FBO temperature_ping;
 static FBO temperature_pong;
 static FBO divergence_ping;
 
+static Shader advect_field;
+static Shader add_field;
+static Shader fill_packed_zeroes;
+static Shader jacobi;
+static Shader gradient;
+static Shader divergence;
+static Shader buoyancy;
+static Shader visualize;
+
+static Mesh inside;
+static Mesh all;
+static Mesh boundary;
+
 static float px_x;
 static float px_y;
+static vector<float> px;
+static vector<float> px1;
+static float width;
+static float height;
+
+bool busy = false;
 
 void ClearFBO(FBO *fbo, float size) {
 	UniformsMap uniforms = {
@@ -66,15 +85,19 @@ void ClearFBO(FBO *fbo, float size) {
    	fill_zeroes.Run();
 }
 
-void FluidInit(int width, int height) {
+void FluidSurface(int width_arg, int height_arg) {
+	busy = true;
+	width = width_arg;
+	height = height_arg;
 	glViewport(0, 0, width, height);
-	glLineWidth(1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
 	px_x = 1.0 / (float) width;
 	px_y = 1.0 / (float) height;
-	vector<float> px = { px_x, px_y };
-	vector<float> px1 = { 1.0, (float) width / (float) height };
+	px = { px_x, px_y };
+	px1 = { 1.0, (float) width / (float) height };
 	
-	Mesh inside(
+	inside = Mesh(
 		GL_TRIANGLES,
 		ScreenQuad(1.0 - px_x * 2.0, 1.0 - px_y * 2.0),
 		{ 0, 1, 2, 3, 4, 5 },
@@ -89,7 +112,7 @@ void FluidInit(int width, int height) {
 		}
 	);
 
-	Mesh all(
+	all = Mesh(
 		GL_TRIANGLES,
 		ScreenQuad(1.0, 1.0),
 		{ 0, 1, 2, 3, 4, 5 },
@@ -104,7 +127,7 @@ void FluidInit(int width, int height) {
 		}
 	);
 
-	Mesh boundary(
+	boundary = Mesh(
 		GL_LINES,
 		{
 			-1+px_x*0, -1+px_y*0,
@@ -152,19 +175,21 @@ void FluidInit(int width, int height) {
 			},
 		}
 	);
-	
 
-	Shader advect_field("shaders/surface.glsl", "shaders/advect_field.glsl");
-	Shader add_field("shaders/surface.glsl", "shaders/add_field.glsl");
-	Shader fill_packed_zeroes(
-		"shaders/surface.glsl", "shaders/fill_packed_zeroes.glsl"
-	);
-	Shader jacobi("shaders/surface.glsl", "shaders/jacobi.glsl");
-	Shader gradient("shaders/surface.glsl", "shaders/gradient.glsl");
-	Shader divergence("shaders/surface.glsl", "shaders/divergence.glsl");
-	Shader buoyancy("shaders/surface.glsl", "shaders/buoyancy.glsl");
-	Shader visualize("shaders/surface.glsl", "shaders/visualize.glsl");
+	FluidInit();
 
+	ClearFBO(&density_ping, 1.0);
+	ClearFBO(&density_pong, 1.0);
+	ClearFBO(&velocity_ping, 2.0);
+	ClearFBO(&velocity_pong, 2.0);
+	ClearFBO(&temperature_ping, 1.0);
+	ClearFBO(&temperature_pong, 1.0);
+
+	busy = false;
+}
+
+
+void FluidInit() {
 	velocity_ping = FBO(width, height, GL_UNSIGNED_BYTE, GL_RGBA);
 	velocity_pong = FBO(width, height, GL_UNSIGNED_BYTE, GL_RGBA);
 	density_ping = FBO(width, height, GL_UNSIGNED_BYTE, GL_RGBA);
@@ -174,7 +199,19 @@ void FluidInit(int width, int height) {
 	temperature_ping = FBO(width, height, GL_UNSIGNED_BYTE, GL_RGBA);
 	temperature_pong = FBO(width, height, GL_UNSIGNED_BYTE, GL_RGBA);
 	divergence_ping = FBO(width, height, GL_UNSIGNED_BYTE, GL_RGBA);
-
+	
+	advect_field = Shader(
+		"shaders/surface.glsl", "shaders/advect_field.glsl"
+	);
+	add_field = Shader("shaders/surface.glsl", "shaders/add_field.glsl");
+	fill_packed_zeroes = Shader(
+		"shaders/surface.glsl", "shaders/fill_packed_zeroes.glsl"
+	);
+	jacobi = Shader("shaders/surface.glsl", "shaders/jacobi.glsl");
+	gradient = Shader("shaders/surface.glsl", "shaders/gradient.glsl");
+	divergence = Shader("shaders/surface.glsl", "shaders/divergence.glsl");
+	buoyancy = Shader("shaders/surface.glsl", "shaders/buoyancy.glsl");
+	visualize = Shader("shaders/surface.glsl", "shaders/visualize.glsl");
 
 	fill_zeroes = ComputeKernel(
 		fill_packed_zeroes,
@@ -226,13 +263,13 @@ void FluidInit(int width, int height) {
 		all,
 		{
 			{"px", {FBO(), px}},
-			{"source", {velocity_ping, vector<float>()}},
-			{"vector_size", {FBO(), {2.0}}},
-			{"force", {FBO(), {0.5, 0.2}}},
-			{"center", {FBO(), {0.1, 0.4}}},
+			{"source", {density_ping, vector<float>()}},
+			{"vector_size", {FBO(), {1.0}}},
+			{"force", {FBO(), {0.0, 0.0}}},
+			{"center", {FBO(), {10.0, 10.0}}},
 			{"scale", {FBO(), {cursor_size * px_x, cursor_size * px_y}}},
 		},
-		temperature_ping,
+		density_pong,
 		"", false, false
 	);
 	
@@ -286,13 +323,6 @@ void FluidInit(int width, int height) {
 		FBO(),
 		"", false, false
 	);
-
-	ClearFBO(&velocity_ping, 2.0);
-	ClearFBO(&velocity_pong, 2.0);
-	ClearFBO(&temperature_ping, 2.0);
-	ClearFBO(&temperature_pong, 2.0);
-	ClearFBO(&density_ping, 2.0);
-	ClearFBO(&density_pong, 2.0);
 }
 
 
@@ -309,14 +339,14 @@ void FluidTouch(bool is_down, float x, float y) {
 	y_1 = y;
 }
 
+#define M_PI 3.14159265358979323846
 
-static float pi = 3.14159265;
 static vector<float> gravity = {0, 0};
 
 
 void FluidRotate(int angle) {
 	angle += 90;
-	float theta = (float) angle * pi / 180.0;
+	float theta = (float) angle * M_PI / 180.0;
 	gravity = {(float) cos(theta), (float) sin(theta)};
 }
 
@@ -328,6 +358,8 @@ void SwapBuffers(FBO *fbo0, FBO *fbo1) {
 }
 
 void FluidUpdate(float elapsed_time) {
+	if (busy)
+		return;
 	UniformsMap uniforms = {
 		{"vector_size", {FBO(), {2.0}}},
 		{"source", {velocity_ping, vector<float>()}},
@@ -411,7 +443,7 @@ void FluidUpdate(float elapsed_time) {
 	
 	// more radius, less value
 	float size_factor = cursor_size * 0.005;
-
+	
 	UniformsMap module_force = {
 		{"source", {density_pong, vector<float>()}},
 		{"force", {FBO(),

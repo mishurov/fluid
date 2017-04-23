@@ -19,6 +19,7 @@ class ParticlesView extends GLSurfaceView {
     private static final String TAG = "Fluid";
     Dialog mDialog;
     RotatingLayout mDialogLayout;
+    boolean mInitialized = false;
 
     public ParticlesView(Context context) {
         super(context);
@@ -28,6 +29,7 @@ class ParticlesView extends GLSurfaceView {
         mDialogLayout = (RotatingLayout) inflater.inflate(R.layout.no_extension, null);
         mDialog.setContentView(mDialogLayout);
 
+        setPreserveEGLContextOnPause(true);
         setEGLContextClientVersion(2);
         setRenderer(new ParticlesRenderer(this));
     }
@@ -53,6 +55,7 @@ class ParticlesView extends GLSurfaceView {
         }
 
         public void onDrawFrame(GL10 gl) {
+            /*
             // calculate elapsed time
             if(m_nLastTime == 0)
                 m_nLastTime = SystemClock.elapsedRealtime();
@@ -61,13 +64,16 @@ class ParticlesView extends GLSurfaceView {
             long nElapsedTime = nCurrentTime - m_nLastTime;
             float fElapsedTime = nElapsedTime / 1000.0f;
             m_nLastTime = nCurrentTime;
-
-            ParticlesLib.step(fElapsedTime);
+            */
+            ParticlesLib.step((float)0.0);
         }
 
-        public void onSurfaceChanged( GL10 gl, int width, int height ) {
+        public void onSurfaceChanged(GL10 gl, int width, int height) {
             // refresh method
-            ParticlesLib.init(width, height);
+            if (!mInitialized) {
+                ParticlesLib.surface(width, height);
+                mInitialized = true;
+            }
         }
 
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
@@ -78,6 +84,7 @@ class ParticlesView extends GLSurfaceView {
             if (!extensions.toLowerCase().contains(texture_float.toLowerCase()))
                 mParentView.showAlert();
             */
+            //ParticlesLib.init();
         }
     }
 }

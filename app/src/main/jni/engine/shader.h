@@ -19,6 +19,7 @@ class Shader {
 	map<string,GLuint> uniform_locations_;
 	UniformsMap uniform_values_;
 	map<string,GLuint> attribute_locations_;
+	bool initialized_;
 
 	void PrepareUniforms(const UniformsMap& values);
 	GLuint GetUniformLocation(string name);
@@ -29,6 +30,7 @@ public:
 	Shader(string vertex_path, string fragment_path);
 	void Use();
 	void Uniforms(const UniformsMap& values);
+	bool initialized();
 	GLuint GetAttribLocation(string name);
 };
 

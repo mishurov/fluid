@@ -1,13 +1,16 @@
-precision highp float;
+precision mediump float;
 
 uniform float vector_size;
 
 #include "converse.glsl"
 
 void main() {
-    if (vector_size == 1.)
-        gl_FragColor = packFloatTo4bytes(0.);
-    else if (vector_size == 2.)
-        gl_FragColor = pack2FloatsTo4bytes(vec2(0., 0.));
+
+    vec4 res;
+    if (vector_size < 1.5) {
+        gl_FragColor = packFloatTo4bytes(0.0);
+    } else {
+        gl_FragColor = pack2FloatsTo4bytes(vec2(0.0, 0.0));
+    }
 }
 

@@ -1,10 +1,19 @@
 
+
 // clamping range
 const float HALF_RANGE = 1.1;
 const float MIN_RANGE = -HALF_RANGE;
 const float MAX_RANGE = HALF_RANGE;
 // fix maping values out of precision
 const float EPSILON = 0.0000001;
+
+const float SHIFT_LEFT_8 = 256.0;
+const float SHIFT_LEFT_16 = 65536.0;
+const float SHIFT_LEFT_24 = 16777216.0;
+
+const float SHIFT_RIGHT_8 = 1.0 / SHIFT_LEFT_8;
+const float SHIFT_RIGHT_16 = 1.0 / SHIFT_LEFT_16;
+const float SHIFT_RIGHT_24 = 1.0 / SHIFT_LEFT_24;
 
 float clampToRange(in float val) {
     return clamp(MIN_RANGE + EPSILON, MAX_RANGE - EPSILON, val);
@@ -19,14 +28,6 @@ float unnormalise(in float val) {
     return val * (MAX_RANGE - MIN_RANGE) + MIN_RANGE;
 }
 
-
-const float SHIFT_LEFT_8 = 256.0;
-const float SHIFT_LEFT_16 = 65536.0;
-const float SHIFT_LEFT_24 = 16777216.0;
-
-const float SHIFT_RIGHT_8 = 1.0 / SHIFT_LEFT_8;
-const float SHIFT_RIGHT_16 = 1.0 / SHIFT_LEFT_16;
-const float SHIFT_RIGHT_24 = 1.0 / SHIFT_LEFT_24;
 
 vec2 packFloatTo2bytes(in float val) {
     val = normalise(val);
@@ -66,4 +67,6 @@ vec4 pack2FloatsTo4bytes(in vec2 val) {
 vec2 unpack2FloatsTo4bytes(in vec4 val) {
     return vec2(unpackFloatTo2bytes(val.xy), unpackFloatTo2bytes(val.zw));
 }
+
+
 

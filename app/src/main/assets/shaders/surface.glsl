@@ -1,4 +1,4 @@
-precision highp float;
+precision mediump float;
 
 attribute vec3 position;
 uniform vec2 px;

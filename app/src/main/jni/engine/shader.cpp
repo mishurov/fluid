@@ -4,10 +4,12 @@
 using namespace std;
 
 Shader::Shader() {
+	initialized_ = false;
 };
 
 Shader::Shader(string vertex_path, string fragment_path) {
 	program_ = CreateProgram(vertex_path, fragment_path);
+	initialized_ = true;
 };
 
 void Shader::Use() {
@@ -15,6 +17,7 @@ void Shader::Use() {
 }
 
 void Shader::PrepareUniforms(const UniformsMap& values) {
+	uniform_names_ = vector<string>();
 	for (UniformsMap::const_iterator it = values.begin();
 	  it != values.end();
 	  ++it) {
@@ -157,7 +160,7 @@ GLuint Shader::CompileShader(string path, GLenum type) {
 			glGetShaderInfoLog(handle, info_length, NULL, info_log);
 			char error_string[1024];
 			sprintf(error_string, "Error compiling shader:\n%s\n", info_log); 
-			LogInfo(error_string);
+			LogError(error_string);
 			delete[] info_log;
 		}
 		glDeleteShader(handle);
@@ -190,7 +193,7 @@ GLuint Shader::CreateProgram(string vertex_path, string fragment_path) {
 			glGetProgramInfoLog(handle, info_length, NULL, info_log);
 			char error_string[1024];
 			sprintf(error_string, "Error linking program:\n%s\n", info_log); 
-			LogInfo(error_string);
+			LogError(error_string);
 			delete[] info_log;
 		}
 		glDeleteProgram(handle);
@@ -199,3 +202,6 @@ GLuint Shader::CreateProgram(string vertex_path, string fragment_path) {
 	return handle;
 }
 
+bool Shader::initialized() {
+	return initialized_;
+}
