@@ -138,6 +138,7 @@ GLuint Shader::CompileShader(string path, GLenum type) {
 		shader_data.insert(0, "#define FRAGMENT\n");
 	else if (type == GL_VERTEX_SHADER)
 		shader_data.insert(0, "#define VERTEX\n");
+	shader_data.insert(0, "#version 100\n");
 
 	GLuint handle = glCreateShader(type);
 	if (handle == 0)

@@ -74,8 +74,6 @@ static vector<float> px1;
 static float width;
 static float height;
 
-bool busy = false;
-
 void ClearFBO(FBO *fbo, float size) {
 	UniformsMap uniforms = {
 		{"vector_size", {FBO(), {size}}},
@@ -86,7 +84,6 @@ void ClearFBO(FBO *fbo, float size) {
 }
 
 void FluidSurface(int width_arg, int height_arg) {
-	busy = true;
 	width = width_arg;
 	height = height_arg;
 	glViewport(0, 0, width, height);
@@ -184,8 +181,6 @@ void FluidSurface(int width_arg, int height_arg) {
 	ClearFBO(&velocity_pong, 2.0);
 	ClearFBO(&temperature_ping, 1.0);
 	ClearFBO(&temperature_pong, 1.0);
-
-	busy = false;
 }
 
 
@@ -358,8 +353,6 @@ void SwapBuffers(FBO *fbo0, FBO *fbo1) {
 }
 
 void FluidUpdate(float elapsed_time) {
-	if (busy)
-		return;
 	UniformsMap uniforms = {
 		{"vector_size", {FBO(), {2.0}}},
 		{"source", {velocity_ping, vector<float>()}},
