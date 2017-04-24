@@ -205,6 +205,7 @@ void FluidInit() {
 		fill_packed_zeroes,
 		all,
 		{
+			{"px", {FBO(), px}},
 			{"vector_size", {FBO(), {1.0}}},
 		},
 		density_ping,
@@ -513,11 +514,11 @@ void FluidUpdate(float elapsed_time) {
 
 	if (init < 5.0) {
 		init += 1.0;
+		ClearFBO(&velocity_ping, 2.0);
+		ClearFBO(&velocity_pong, 2.0);
 		ClearFBO(&pressure_pong, 1.0);
 		ClearFBO(&pressure_ping, 1.0);
 		ClearFBO(&divergence_ping, 1.0);
-		ClearFBO(&velocity_ping, 2.0);
-		ClearFBO(&velocity_pong, 2.0);
 		ClearFBO(&temperature_ping, 1.0);
 		ClearFBO(&temperature_pong, 1.0);
 		ClearFBO(&density_pong, 1.0);
