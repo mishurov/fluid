@@ -14,75 +14,6 @@ static vector<float> fg_color = { 0.0, 0.0, 0.0 };
 static vector<float> bg_color = { 1.0, 1.0, 1.0 };
 
 
-float normalise(float val) {
-	float HALF_RANGE = 1.1;
-	float MIN_RANGE = -HALF_RANGE;
-	float MAX_RANGE = HALF_RANGE;
-	return (val - MIN_RANGE) / (MAX_RANGE - MIN_RANGE);
-}
-
-float fract(float value)
-{
-  return (float)fmod(value, 1.0f);
-}
-
-void fillFloat(FBO *fbo) {
-    float val = normalise(0);
-	float SHIFT_LEFT_8 = 256.0;
-	float SHIFT_LEFT_16 = 65536.0;
-	float SHIFT_LEFT_24 = 16777216.0;
-	float SHIFT_RIGHT_8 = 1.0 / SHIFT_LEFT_8;
-	float SHIFT_RIGHT_16 = 1.0 / SHIFT_LEFT_16;
-	float SHIFT_RIGHT_24 = 1.0 / SHIFT_LEFT_24;
-	float bitSh_r = SHIFT_LEFT_24;
-	float bitSh_g = SHIFT_LEFT_16;
-	float bitSh_b = SHIFT_LEFT_8;
-	float bitSh_a = 1.0;
-	float bitMsk_r = 0.0;
-	float bitMsk_g =  SHIFT_RIGHT_8;
-	float bitMsk_b =  SHIFT_RIGHT_8;
-	float bitMsk_a =  SHIFT_RIGHT_8;
-
-	float ret_x = fract(val * bitSh_r);
-	float ret_y = fract(val * bitSh_g);
-	float ret_z = fract(val * bitSh_b);
-	float ret_w = fract(val * bitSh_a);
-
-	ret_x -= ret_x * bitMsk_r;
-	ret_y -= ret_x * bitMsk_g;
-	ret_z -= ret_y * bitMsk_b;
-	ret_w -= ret_z * bitMsk_a;
-	
-	fbo->Clear(ret_x, ret_y, ret_z, ret_w);
-}
-
-void fillVector(FBO *fbo) {
-    float val = normalise(0);
-
-	float SHIFT_LEFT_8 = 256.0;
-	float SHIFT_LEFT_16 = 65536.0;
-	float SHIFT_LEFT_24 = 16777216.0;
-	float SHIFT_RIGHT_8 = 1.0 / SHIFT_LEFT_8;
-	float SHIFT_RIGHT_16 = 1.0 / SHIFT_LEFT_16;
-	float SHIFT_RIGHT_24 = 1.0 / SHIFT_LEFT_24;
-	float bitSh_r = SHIFT_LEFT_8;
-	float bitSh_g = 1.0;
-	float bitMsk_r = 0.0;
-	float bitMsk_g =  SHIFT_RIGHT_8;
-	float ret_x = fract(val * bitSh_r);
-	float ret_y = fract(val * bitSh_g);
-	ret_x -= ret_x * bitMsk_r;
-	ret_y -= ret_x * bitMsk_g;
-    //const vec2 bitSh = vec2(SHIFT_LEFT_8, 1.0);
-    //const vec2 bitMsk = vec2(0.0, SHIFT_RIGHT_8);
-    //vec2 ret = fract(val * bitSh);
-    //ret -= ret.xx * bitMsk;
-	fbo->Clear(ret_x, ret_y, ret_x, ret_y);
-}
-
-
-
-
 vector<float> HStringToFloat3(string str) {
 	vector<float> ret = vector<float>();
 	for (int pos = 2; pos <= 6; pos += 2 ) {
@@ -243,25 +174,6 @@ void FluidSurface(int width_arg, int height_arg) {
 	);
 
 	FluidInit();
-
-	//ClearFBO(&density_ping, 1.0);
-	//ClearFBO(&density_pong, 1.0);
-	
-	/*
-	fillFloat(&density_ping);
-	fillFloat(&density_pong);
-	fillVector(&velocity_ping);
-	fillVector(&velocity_ping);
-	fillFloat(&temperature_ping);
-	fillFloat(&temperature_ping);
-	fillFloat(&pressure_ping);
-	fillFloat(&pressure_pong);
-	fillFloat(&divergence_ping);
-	*/
-	//ClearFBO(&velocity_ping, 2.0);
-	//ClearFBO(&velocity_pong, 2.0);
-	//ClearFBO(&temperature_ping, 1.0);
-	//ClearFBO(&temperature_pong, 1.0);
 }
 
 
@@ -341,6 +253,7 @@ void FluidInit() {
 			{"px", {FBO(), px}},
 			{"source", {density_ping, vector<float>()}},
 			{"vector_size", {FBO(), {1.0}}},
+			{"init", {FBO(), {0.0}}},
 			{"force", {FBO(), {0.0, 0.0}}},
 			{"center", {FBO(), {10.0, 10.0}}},
 			{"scale", {FBO(), {cursor_size * px_x, cursor_size * px_y}}},
@@ -433,6 +346,8 @@ void SwapBuffers(FBO *fbo0, FBO *fbo1) {
 	*fbo1 = swap;
 }
 
+static float init = 0.0;
+
 void FluidUpdate(float elapsed_time) {
 	UniformsMap uniforms = {
 		{"vector_size", {FBO(), {2.0}}},
@@ -442,7 +357,8 @@ void FluidUpdate(float elapsed_time) {
 	};
     advect.SetUniforms(uniforms);
     advect.SetFBO(velocity_pong);
-	advect.Run();
+	if (init > 4.0)
+		advect.Run();
 	SwapBuffers(&velocity_ping, &velocity_pong);
 
 	uniforms = {
@@ -453,7 +369,8 @@ void FluidUpdate(float elapsed_time) {
 	};
     advect.SetUniforms(uniforms);
     advect.SetFBO(temperature_pong);
-	advect.Run();
+	if (init > 4.0)
+		advect.Run();
 
 	uniforms = {
 		{"source", {density_ping, vector<float>()}},
@@ -461,7 +378,8 @@ void FluidUpdate(float elapsed_time) {
 	};
     advect.SetUniforms(uniforms);
     advect.SetFBO(density_pong);
-	advect.Run();
+	if (init > 4.0)
+		advect.Run();
 	
 	uniforms = {
 		{"velocity", {velocity_ping, vector<float>()}},
@@ -469,10 +387,11 @@ void FluidUpdate(float elapsed_time) {
 		{"density", {density_pong, vector<float>()}},
 		{"gravity", {FBO(), gravity}},
 	};
+
     apply_buoyancy.SetUniforms(uniforms);
     apply_buoyancy.SetFBO(velocity_pong);
-	apply_buoyancy.Run();
-
+	if (init > 4.0)
+		apply_buoyancy.Run();
 
 	float xd = x_1 - x_0;
 	float yd = y_1 - y_0;
@@ -535,36 +454,43 @@ void FluidUpdate(float elapsed_time) {
 
 	impulse.SetUniforms(force);
     impulse.SetFBO(velocity_ping);
-	impulse.Run();
+	if (init > 2.0)
+		impulse.Run();
 
 	impulse.SetUniforms(module_force);
     impulse.SetFBO(density_ping);
-	impulse.Run();
+	if (init > 2.0)
+		impulse.Run();
 
 	uniforms = {
 		{"source", {temperature_pong, vector<float>()}},
 	};
     impulse.SetUniforms(uniforms);
     impulse.SetFBO(temperature_ping);
-	impulse.Run();
+	if (init > 1.0)
+		impulse.Run();
+
 
 	uniforms = {
 		{"velocity", {velocity_ping, vector<float>()}},
 	};
     apply_divergence.SetUniforms(uniforms);
     apply_divergence.SetFBO(divergence_ping);
-	apply_divergence.Run();
+
+	if (init > 4.0)
+		apply_divergence.Run();
 	
 	//pressure_ping.Clear(0, 0);
 	for(int i = 0; i < iterations; i++) {
-		SwapBuffers(&pressure_ping, &pressure_pong);
 		uniforms = {
 			{"divergence", {divergence_ping, vector<float>()}},
 			{"pressure", {pressure_ping, vector<float>()}},
 		};
     	compute_jacobi.SetUniforms(uniforms);
     	compute_jacobi.SetFBO(pressure_pong);
-		compute_jacobi.Run();
+		if (init > 4.0)
+			compute_jacobi.Run();
+		SwapBuffers(&pressure_ping, &pressure_pong);
 	}
 
 	uniforms = {
@@ -573,7 +499,8 @@ void FluidUpdate(float elapsed_time) {
 	};
     subtract_gradient.SetUniforms(uniforms);
     subtract_gradient.SetFBO(velocity_pong);
-	subtract_gradient.Run();
+	if (init > 4.0)
+		subtract_gradient.Run();
 	SwapBuffers(&velocity_ping, &velocity_pong);
 
 	uniforms = {
@@ -583,5 +510,18 @@ void FluidUpdate(float elapsed_time) {
 	};
     draw.SetUniforms(uniforms);
 	draw.Run();
+
+	if (init < 5.0) {
+		init += 1.0;
+		ClearFBO(&pressure_pong, 1.0);
+		ClearFBO(&pressure_ping, 1.0);
+		ClearFBO(&divergence_ping, 1.0);
+		ClearFBO(&velocity_ping, 2.0);
+		ClearFBO(&velocity_pong, 2.0);
+		ClearFBO(&temperature_ping, 1.0);
+		ClearFBO(&temperature_pong, 1.0);
+		ClearFBO(&density_pong, 1.0);
+		ClearFBO(&density_pong, 1.0);
+	}
 }
 
