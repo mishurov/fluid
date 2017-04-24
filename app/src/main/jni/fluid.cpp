@@ -14,6 +14,75 @@ static vector<float> fg_color = { 0.0, 0.0, 0.0 };
 static vector<float> bg_color = { 1.0, 1.0, 1.0 };
 
 
+float normalise(float val) {
+	float HALF_RANGE = 1.1;
+	float MIN_RANGE = -HALF_RANGE;
+	float MAX_RANGE = HALF_RANGE;
+	return (val - MIN_RANGE) / (MAX_RANGE - MIN_RANGE);
+}
+
+float fract(float value)
+{
+  return (float)fmod(value, 1.0f);
+}
+
+void fillFloat(FBO *fbo) {
+    float val = normalise(0);
+	float SHIFT_LEFT_8 = 256.0;
+	float SHIFT_LEFT_16 = 65536.0;
+	float SHIFT_LEFT_24 = 16777216.0;
+	float SHIFT_RIGHT_8 = 1.0 / SHIFT_LEFT_8;
+	float SHIFT_RIGHT_16 = 1.0 / SHIFT_LEFT_16;
+	float SHIFT_RIGHT_24 = 1.0 / SHIFT_LEFT_24;
+	float bitSh_r = SHIFT_LEFT_24;
+	float bitSh_g = SHIFT_LEFT_16;
+	float bitSh_b = SHIFT_LEFT_8;
+	float bitSh_a = 1.0;
+	float bitMsk_r = 0.0;
+	float bitMsk_g =  SHIFT_RIGHT_8;
+	float bitMsk_b =  SHIFT_RIGHT_8;
+	float bitMsk_a =  SHIFT_RIGHT_8;
+
+	float ret_x = fract(val * bitSh_r);
+	float ret_y = fract(val * bitSh_g);
+	float ret_z = fract(val * bitSh_b);
+	float ret_w = fract(val * bitSh_a);
+
+	ret_x -= ret_x * bitMsk_r;
+	ret_y -= ret_x * bitMsk_g;
+	ret_z -= ret_y * bitMsk_b;
+	ret_w -= ret_z * bitMsk_a;
+	
+	fbo->Clear(ret_x, ret_y, ret_z, ret_w);
+}
+
+void fillVector(FBO *fbo) {
+    float val = normalise(0);
+
+	float SHIFT_LEFT_8 = 256.0;
+	float SHIFT_LEFT_16 = 65536.0;
+	float SHIFT_LEFT_24 = 16777216.0;
+	float SHIFT_RIGHT_8 = 1.0 / SHIFT_LEFT_8;
+	float SHIFT_RIGHT_16 = 1.0 / SHIFT_LEFT_16;
+	float SHIFT_RIGHT_24 = 1.0 / SHIFT_LEFT_24;
+	float bitSh_r = SHIFT_LEFT_8;
+	float bitSh_g = 1.0;
+	float bitMsk_r = 0.0;
+	float bitMsk_g =  SHIFT_RIGHT_8;
+	float ret_x = fract(val * bitSh_r);
+	float ret_y = fract(val * bitSh_g);
+	ret_x -= ret_x * bitMsk_r;
+	ret_y -= ret_x * bitMsk_g;
+    //const vec2 bitSh = vec2(SHIFT_LEFT_8, 1.0);
+    //const vec2 bitMsk = vec2(0.0, SHIFT_RIGHT_8);
+    //vec2 ret = fract(val * bitSh);
+    //ret -= ret.xx * bitMsk;
+	fbo->Clear(ret_x, ret_y, ret_x, ret_y);
+}
+
+
+
+
 vector<float> HStringToFloat3(string str) {
 	vector<float> ret = vector<float>();
 	for (int pos = 2; pos <= 6; pos += 2 ) {
@@ -175,12 +244,24 @@ void FluidSurface(int width_arg, int height_arg) {
 
 	FluidInit();
 
-	ClearFBO(&density_ping, 1.0);
-	ClearFBO(&density_pong, 1.0);
-	ClearFBO(&velocity_ping, 2.0);
-	ClearFBO(&velocity_pong, 2.0);
-	ClearFBO(&temperature_ping, 1.0);
-	ClearFBO(&temperature_pong, 1.0);
+	//ClearFBO(&density_ping, 1.0);
+	//ClearFBO(&density_pong, 1.0);
+	
+	/*
+	fillFloat(&density_ping);
+	fillFloat(&density_pong);
+	fillVector(&velocity_ping);
+	fillVector(&velocity_ping);
+	fillFloat(&temperature_ping);
+	fillFloat(&temperature_ping);
+	fillFloat(&pressure_ping);
+	fillFloat(&pressure_pong);
+	fillFloat(&divergence_ping);
+	*/
+	//ClearFBO(&velocity_ping, 2.0);
+	//ClearFBO(&velocity_pong, 2.0);
+	//ClearFBO(&temperature_ping, 1.0);
+	//ClearFBO(&temperature_pong, 1.0);
 }
 
 

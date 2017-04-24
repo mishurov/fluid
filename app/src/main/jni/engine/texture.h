@@ -30,7 +30,7 @@ public:
 	void Uniform(GLuint location);
 	void Set(int value);
 	int unit();
-	void Clear(float value, float alpha);
+	void Clear(float r, float g, float b, float a);
 
 };
 
