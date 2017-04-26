@@ -16,6 +16,8 @@ https://software.intel.com/en-us/articles/setting-up-native-opengl-es-on-android
 Engine for fluids is ported from js to cpp from this project:
 https://github.com/jwagner/fluidwebgl
 
+In a nutshell, it's a simplified numerical approach to compute Navier-Stokes equtions using Jacobi method for the Poisson part of the equations. The math part is described here: http://http.developer.nvidia.com/GPUGems/gpugems_ch38.html
+
 The ported version isn't perfectly memory efficient because I allocate unnecessary bytes for STL maps and pairs in order to keep the architecture from the js project.
 
 I added density and temperature fields, added buoyancy calculations, removed boundary calculations.
