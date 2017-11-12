@@ -394,6 +394,8 @@ function setup(width, height) {
   };
 }
 
+// app/src/main/assets/shaders
+
 if(gl)
 loader.load([
   'js/shaders/surface.glsl',

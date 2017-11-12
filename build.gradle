@@ -1,11 +1,14 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
+    ext.kotlin_version = '1.1.51'
     repositories {
         jcenter()
+        google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.1'
+        classpath 'com.android.tools.build:gradle:3.0.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -15,35 +18,11 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
+        google()
     }
 }
 
 task clean(type: Delete) {
     delete rootProject.buildDir
-}
-
-task("syntastic") << {
-    def jarCollection = new HashSet<String>()
-
-    def appClasses = new File("app/build/intermediates/classes/debug").absolutePath
-    Properties properties = new Properties()
-    properties.load(project.rootProject.file('local.properties').newDataInputStream())
-    def sdkDir = properties.getProperty('sdk.dir')
-    def platformClasses = sdkDir + '/platforms/android-23/*.jar'
-
-    jarCollection.add(appClasses)
-    jarCollection.add(platformClasses)
-
-    def paths = jarCollection.collect().join(":")
-    def output = new File(".syntastic_javac_config")
-    output.write "let g:syntastic_java_javac_classpath = '" + paths + "'"
-
-    def include = sdkDir + '/platforms/android-23/arch-x86_64/usr/include/'
-
-    def c_output = new File(".syntastic_c_config")
-    c_output.write "let g:syntastic_c_include_dirs = ['" + include + "']"
-
-    def cpp_output = new File(".syntastic_cpp_config")
-    cpp_output.write "let g:syntastic_cpp_include_dirs = ['" + include + "']"
 }
 
