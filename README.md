@@ -2,7 +2,7 @@
 
 A real time fluid simulation based on the Navier-Stokes equations and computed in OpenGL shaders.
 
-[![](http://mishurov.usite.pro/github/fluid/Screenshot1.png)](https://play.google.com/store/apps/details?id=uk.co.mishurov.fluid)
+[![](http://mishurov.co.uk/images/github/fluid/Screenshot1.png)](https://play.google.com/store/apps/details?id=uk.co.mishurov.fluid)
 
 [The app on Play Market](https://play.google.com/store/apps/details?id=uk.co.mishurov.fluid)
 
