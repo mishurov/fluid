@@ -14,7 +14,8 @@ void main() {
         gl_FragColor = res;
     } else {
         // temporary fix for the initial gradient substract
-        res = pack2FloatsTo4bytes(vec2(-0.5, 0.0));
+        //res = pack2FloatsTo4bytes(vec2(-0.5, 0.0));
+        res = pack2FloatsTo4bytes(vec2(0.0, 0.0));
         gl_FragColor = res;
     }
 }

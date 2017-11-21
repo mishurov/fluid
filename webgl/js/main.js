@@ -33,7 +33,7 @@ var canvas = document.getElementById('webGLCanvas'),
     mouse_force: 1,
     resolution: 1,
     cursor_size: 50,
-    step: 1/60
+    step: 1 / 60
   },
   clock = new Clock(canvas),
   loader = new Loader(),
@@ -202,6 +202,8 @@ function setup(width, height) {
   clearFbo(temperature_pong, 1.0);
   clearFbo(density_ping, 1.0);
   clearFbo(density_pong, 1.0);
+  clearFbo(pressure_ping, 1.0);
+  clearFbo(pressure_pong, 1.0);
 
   // Cursor attrs
   var x_0 = 0,
@@ -378,7 +380,7 @@ function setup(width, height) {
     }
 
     subtract_gradient.uniforms.velocity = velocity_ping;
-    subtract_gradient.uniforms.pressure = pressure_ping;
+    subtract_gradient.uniforms.pressure = pressure_pong;
     subtract_gradient.outputFBO = velocity_pong;
     subtract_gradient.run();
 

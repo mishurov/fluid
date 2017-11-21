@@ -21,6 +21,7 @@ void main() {
     vec4 v_c = texture2D(velocity, uv);
     vec2 v = unpack2FloatsTo4bytes(v_c);
 
-    vec2 res = (v - (vec2(x1, y1) - vec2(x0, y0)) * 0.5) * scale;
+    vec2 res = (v - (vec2(x1, y1) - vec2(x0, y0)) * scale);
+
     gl_FragColor = pack2FloatsTo4bytes(res);
 }
