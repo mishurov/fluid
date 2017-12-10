@@ -8,7 +8,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error=format-security")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fexceptions -Wall")
 
 add_library(
-    particles
+    fluid
     SHARED
     gl_code.cpp
     fluid.cpp
@@ -22,6 +22,6 @@ add_library(
     utils/log.c
 )
 
-target_link_libraries(particles log android GLESv2)
+target_link_libraries(fluid log android GLESv2)
 
 

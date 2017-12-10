@@ -6,9 +6,7 @@ import android.hardware.SensorManager
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.OrientationEventListener
-import android.view.Display
 import android.view.Surface
-import android.view.LayoutInflater
 import android.view.Gravity
 import android.widget.Toast
 import android.content.SharedPreferences
@@ -16,11 +14,13 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.content.Intent
 import android.content.res.AssetManager
 import android.preference.PreferenceManager
+
+
 import android.util.Log
 
 
-class ParticlesActivity : Activity() {
-
+class MainActivity : Activity()
+{
     private var mPrefs: SharedPreferences? = null
     private var mListener: OnSharedPreferenceChangeListener? = null
     private var mGestureDetector: GestureDetector? = null
@@ -28,16 +28,18 @@ class ParticlesActivity : Activity() {
     private var mOrientationListener: OrientationEventListener? = null
     private var mOrientation = 0
     private var mScreenRotation = 0
-    private var mView: ParticlesView? = null
+    private var mView: FluidView? = null
 
     private var mToasterLayout: RotatingLayout? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
 
         // Toast for settings
         val inflater = getLayoutInflater()
-        mToasterLayout = inflater.inflate(R.layout.toaster, null) as RotatingLayout
+        mToasterLayout = inflater.inflate(
+                                    R.layout.toaster, null) as RotatingLayout
         val toast = Toast(getApplicationContext())
         toast.setGravity(Gravity.CENTER_VERTICAL, 0, 0)
         toast.setDuration(Toast.LENGTH_LONG)
@@ -56,12 +58,11 @@ class ParticlesActivity : Activity() {
         mOrientationListener = object : OrientationEventListener(this,
                 SensorManager.SENSOR_DELAY_NORMAL) {
             override fun onOrientationChanged(orientation: Int) {
-                val sr = this@ParticlesActivity.mScreenRotation
+                val sr = this@MainActivity.mScreenRotation
                 val angle = orientation + sr
-                this@ParticlesActivity.mOrientation = angle
-                ParticlesLib.rotate(angle)
-                //this@ParticlesActivity.mView.rotateDialog(angle)
-                this@ParticlesActivity.mToasterLayout?.setAngle(angle)
+                this@MainActivity.mOrientation = angle
+                FluidLib.rotate(angle)
+                this@MainActivity.mToasterLayout?.setAngle(angle)
             }
         }
 
@@ -77,81 +78,90 @@ class ParticlesActivity : Activity() {
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this)
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
-        mListener = object : OnSharedPreferenceChangeListener {
+        mListener = object : OnSharedPreferenceChangeListener
+        {
             override fun onSharedPreferenceChanged(prefs: SharedPreferences,
-                                                   key: String) {
-                this@ParticlesActivity.passSettings(prefs)
+                                                   key: String)
+            {
+                this@MainActivity.passSettings(prefs)
             }
         }
 
         // Run native
         sAssetManager = getAssets()
-            ParticlesLib.createAssetManager(sAssetManager!!)
-        mView = ParticlesView(this)
+        FluidLib.createAssetManager(sAssetManager!!)
+        mView = FluidView(this)
         setContentView(mView)
         // Pass settings after lib initialisation
         passSettings(mPrefs!!)
-        // Toast for settings
+        // Toast about settings
         toast.show()
     }
 
-    private fun passSettings(prefs: SharedPreferences) {
+    private fun passSettings(prefs: SharedPreferences)
+    {
         val fgColorPref = prefs.getInt(KEY_PREF_FG_COLOR, 0)
         val bgColorPref = prefs.getInt(KEY_PREF_BG_COLOR, 1)
         val iterationsPref = prefs.getInt(KEY_PREF_ITERATIONS, 8)
         val cursorSizePref = prefs.getInt(KEY_PREF_CURSOR_SIZE, 10)
         var fgColorStr = Integer.toHexString(fgColorPref)
         var bgColorStr = Integer.toHexString(bgColorPref)
-        ParticlesLib.settings(
+        FluidLib.settings(
                 fgColorStr, bgColorStr, iterationsPref, cursorSizePref
         )
     }
 
-    override fun onPause() {
+    override fun onPause()
+    {
         mPrefs?.unregisterOnSharedPreferenceChangeListener(mListener);
         super.onPause()
         mView?.onPause()
     }
 
-    override fun onResume() {
+    override fun onResume()
+    {
         mPrefs?.registerOnSharedPreferenceChangeListener(mListener)
         super.onResume()
         mView?.onResume()
     }
 
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
         mOrientationListener?.disable()
     }
 
-    override fun onTouchEvent(touchevent: MotionEvent): Boolean {
+    override fun onTouchEvent(touchevent: MotionEvent): Boolean
+    {
         val x = touchevent.getX()
         val y = touchevent.getY()
         when (touchevent.getAction()) {
             MotionEvent.ACTION_DOWN -> {
-                ParticlesLib.touch(true, x, y)
+                FluidLib.touch(true, x, y)
             }
             MotionEvent.ACTION_MOVE -> {
-                ParticlesLib.touch(true, x, y)
+                FluidLib.touch(true, x, y)
             }
             MotionEvent.ACTION_UP -> {
-                ParticlesLib.touch(false, x, y)
+                FluidLib.touch(false, x, y)
             }
         }
         return mGestureDetector?.onTouchEvent(touchevent) as Boolean
     }
 
-    private inner class GestureListener : GestureDetector.SimpleOnGestureListener() {
+    private inner class GestureListener :
+                                    GestureDetector.SimpleOnGestureListener()
+    {
         override fun onDoubleTap(e: MotionEvent): Boolean {
-            val i = Intent(this@ParticlesActivity, SettingsActivity::class.java)
-            startActivity(i)
+            val intent = Intent(this@MainActivity, SettingsActivity::class.java)
+            startActivity(intent)
             return true
         }
     }
 
     companion object {
-        private val TAG = "Fluid"
-        private val GESTURE_TRESHOLD = 3f
+        private val TAG = "Fluid MainActivity"
+        private val GESTURE_TRESHOLD = 3.0f
         private val KEY_PREF_FG_COLOR = "pref_fg_color"
         private val KEY_PREF_BG_COLOR = "pref_bg_color"
         private val KEY_PREF_ITERATIONS = "pref_iterations"

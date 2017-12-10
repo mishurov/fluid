@@ -14,12 +14,5 @@
     <string name="pref_cursor_size_title">Cursor size</string>
     <string name="pref_cursor_size_summary">Radius of a cursor: %s</string>
 
-    <string name="dialog_text">
-        The device doesn\'t support \n
-        GL_OES_texture_float extension. \n
-        The app won\'t draw \n
-        anything to the screen.
-    </string>
-
     <string name="toster_text">Double tap to open settings</string>
 </resources>
