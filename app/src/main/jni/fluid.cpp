@@ -237,7 +237,7 @@ void FluidInit() {
 		{
 			{"ambient_temperature", {FBO(), {0.0}}},
 			{"sigma", {FBO(), {1.5}}}, // Smoke Buoyancy
-			{"kappa", {FBO(), {0.05}}}, // Smoke Weight
+			{"kappa", {FBO(), {0.01}}}, // Smoke Weight
 			{"gravity", {FBO(), {0.0, 0,0}}},
 			{"velocity", {velocity_ping, vector<float>()}},
 			{"temperature", {temperature_ping, vector<float>()}},
@@ -255,11 +255,11 @@ void FluidInit() {
 		all,
 		{
 			{"px", {FBO(), px}},
-			{"source", {density_ping, vector<float>()}},
-			{"vector_size", {FBO(), {1.0}}},
+			{"source", {velocity_ping, vector<float>()}},
+			{"vector_size", {FBO(), {2.0}}},
 			{"init", {FBO(), {0.0}}},
 			{"force", {FBO(), {0.0, 0.0}}},
-			{"center", {FBO(), {10.0, 10.0}}},
+			{"center", {FBO(), {0.0, 0.0}}},
 			{"scale", {FBO(), {cursor_size * px_x, cursor_size * px_y}}},
 		},
 		density_pong,
@@ -317,7 +317,6 @@ void FluidInit() {
 		"", false, false
 	);
 
-
 	ClearFBO(&velocity_ping, 2.0);
 	ClearFBO(&velocity_pong, 2.0);
 	ClearFBO(&pressure_pong, 1.0);
@@ -327,7 +326,6 @@ void FluidInit() {
 	ClearFBO(&temperature_pong, 1.0);
 	ClearFBO(&density_ping, 1.0);
 	ClearFBO(&density_pong, 1.0);
-
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
@@ -367,7 +365,7 @@ void FluidUpdate(float elapsed_time) {
 	UniformsMap uniforms = {
 		{"vector_size", {FBO(), {2.0}}},
 		{"source", {velocity_ping, vector<float>()}},
-		{"dissipation", {FBO(), {0.999}}},
+		{"dissipation", {FBO(), {0.9999}}},
 		{"velocity", {velocity_ping, vector<float>()}}
 	};
 
@@ -389,7 +387,7 @@ void FluidUpdate(float elapsed_time) {
 
 	uniforms = {
 		{"source", {density_ping, vector<float>()}},
-		{"dissipation", {FBO(), {0.999}}},
+		{"dissipation", {FBO(), {0.9999}}},
 	};
 
 	advect.SetUniforms(uniforms);
@@ -416,8 +414,8 @@ void FluidUpdate(float elapsed_time) {
 		{"source", {velocity_pong, vector<float>()}},
 		{"force", {FBO(),
 			{
-				-xd * px_x * cursor_size * mouse_force,
-				yd * px_y * cursor_size * mouse_force
+				xd * px_x * cursor_size * mouse_force,
+				-yd * px_y * cursor_size * mouse_force
 			}
 		}},
 		{"vector_size", {FBO(),
@@ -449,7 +447,7 @@ void FluidUpdate(float elapsed_time) {
 	}
 	
 	// more radius, less value
-	float size_factor = cursor_size * 0.005;
+	float size_factor = cursor_size * 0.0015;
 
 	impulse.SetUniforms(force);
 	impulse.SetFBO(velocity_ping);
@@ -460,7 +458,7 @@ void FluidUpdate(float elapsed_time) {
 		{"force", {FBO(),
 			{
 				force_avg * px_x * mouse_force / size_factor,
-				force_avg * px_y * mouse_force / size_factor,
+				-force_avg * px_y * mouse_force / size_factor,
 			}
 		}},
 		{"vector_size", {FBO(),

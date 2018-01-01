@@ -11,8 +11,6 @@ import android.view.Window
 
 internal class FluidView(context: Context) : GLSurfaceView(context)
 {
-    var mInitialized = false
-
     init {
         setPreserveEGLContextOnPause(true)
         setEGLContextClientVersion(2)
@@ -30,10 +28,7 @@ internal class FluidView(context: Context) : GLSurfaceView(context)
 
         override fun onSurfaceChanged(gl: GL10, width: Int, height: Int)
         {
-            if (!mInitialized) {
-                FluidLib.surface(width, height)
-                mInitialized = true
-            }
+            FluidLib.surface(width, height)
         }
 
         override fun onSurfaceCreated(gl: GL10, config: EGLConfig)

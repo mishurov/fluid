@@ -8,11 +8,11 @@ const float MAX_RANGE_V = HALF_RANGE_V;
 const float EPSILON_V = 0.;
 
 // scalar field
-const float HALF_RANGE_S = 0.99;
+const float HALF_RANGE_S = 0.9999;
 const float MIN_RANGE_S = -HALF_RANGE_S;
 const float MAX_RANGE_S = HALF_RANGE_S;
 // fix maping values out of precision
-const float EPSILON_S = 0.004;
+const float EPSILON_S = 0.000001;
 
 const float SHIFT_LEFT_8 = 256.0;
 const float SHIFT_LEFT_16 = 65536.0;
