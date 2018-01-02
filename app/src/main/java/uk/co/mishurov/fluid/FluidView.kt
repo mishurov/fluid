@@ -1,40 +1,36 @@
 package uk.co.mishurov.fluid
 
-import android.content.Context
 import android.opengl.GLSurfaceView
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
-import android.app.Dialog
-import android.view.LayoutInflater
-import android.view.Window
+import android.content.Context
 
 
-internal class FluidView(context: Context) : GLSurfaceView(context)
+class FluidView(context: Context) : GLSurfaceView(context)
 {
+    var isTouch = false
+    var vx = 0.0f
+    var vy = 0.0f
+    var gravity = floatArrayOf(0.0f, 1.0f)
+    var cursorSize = 50.0f
+    var iterations = 5
+    var bgColor = floatArrayOf(1.0f, 1.0f, 1.0f)
+    var fgColor = floatArrayOf(0.0f, 0.0f, 0.0f)
+
     init {
         setPreserveEGLContextOnPause(true)
         setEGLContextClientVersion(2)
         setRenderer(FluidRenderer(this))
     }
 
-    private inner class FluidRenderer(
-                                    internal var mParentView: FluidView)
-                        : GLSurfaceView.Renderer
-    {
-        override fun onDrawFrame(gl: GL10)
-        {
-            FluidLib.step(0.0f)
-        }
+    fun touch(aIsTouch: Boolean, ax: Float, ay: Float) {
+        isTouch = aIsTouch
+        vx = ax
+        vy = ay
+    }
 
-        override fun onSurfaceChanged(gl: GL10, width: Int, height: Int)
-        {
-            FluidLib.surface(width, height)
-        }
-
-        override fun onSurfaceCreated(gl: GL10, config: EGLConfig)
-        {
-            //FluidLib.init()
-        }
+    fun rotate(a: Float) {
+        val angle = a + 90.0f;
+        val theta = angle * kotlin.math.PI.toFloat() / 180.0f
+        gravity = floatArrayOf(kotlin.math.cos(theta),  kotlin.math.sin(theta))
     }
 
     companion object

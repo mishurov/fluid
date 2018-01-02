@@ -12,9 +12,8 @@ import android.widget.Toast
 import android.content.SharedPreferences
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.content.Intent
-import android.content.res.AssetManager
 import android.preference.PreferenceManager
-
+import android.util.DisplayMetrics
 
 import android.util.Log
 
@@ -29,6 +28,8 @@ class MainActivity : Activity()
     private var mOrientation = 0
     private var mScreenRotation = 0
     private var mView: FluidView? = null
+
+    private var glScale = 1.0f
 
     private var mToasterLayout: RotatingLayout? = null
 
@@ -61,8 +62,8 @@ class MainActivity : Activity()
                 val sr = this@MainActivity.mScreenRotation
                 val angle = orientation + sr
                 this@MainActivity.mOrientation = angle
-                FluidLib.rotate(angle)
                 this@MainActivity.mToasterLayout?.setAngle(angle)
+                this@MainActivity.mView?.rotate(angle.toFloat())
             }
         }
 
@@ -87,15 +88,36 @@ class MainActivity : Activity()
             }
         }
 
+        val displayMetrics = DisplayMetrics()
+        display.getMetrics(displayMetrics)
+        val width = displayMetrics.widthPixels
+        val height = displayMetrics.heightPixels
+
+        if (width > GL_SIZE || height > GL_SIZE) {
+            val max = if (width > height) width else height
+            glScale = GL_SIZE / max.toFloat()
+        }
+
+        val glWidth = (width.toFloat() * glScale).toInt()
+        val glHeight = (height.toFloat() * glScale).toInt()
+
         // Run native
-        sAssetManager = getAssets()
-        FluidLib.createAssetManager(sAssetManager!!)
         mView = FluidView(this)
         setContentView(mView)
+        mView!!.getHolder().setFixedSize(glWidth, glHeight);
         // Pass settings after lib initialisation
         passSettings(mPrefs!!)
         // Toast about settings
         toast.show()
+    }
+
+    private fun toRgb(color: Int) : FloatArray
+    {
+        val r = (color shr 16) and 0xFF
+        val g = (color shr 8) and 0xFF
+        val b = (color shr 0) and 0xFF
+        val u = 255.0f
+        return floatArrayOf(r.toFloat() / u, g.toFloat() / u, b.toFloat() / u)
     }
 
     private fun passSettings(prefs: SharedPreferences)
@@ -104,11 +126,13 @@ class MainActivity : Activity()
         val bgColorPref = prefs.getInt(KEY_PREF_BG_COLOR, 1)
         val iterationsPref = prefs.getInt(KEY_PREF_ITERATIONS, 8)
         val cursorSizePref = prefs.getInt(KEY_PREF_CURSOR_SIZE, 10)
-        var fgColorStr = Integer.toHexString(fgColorPref)
-        var bgColorStr = Integer.toHexString(bgColorPref)
-        FluidLib.settings(
-                fgColorStr, bgColorStr, iterationsPref, cursorSizePref
-        )
+        //var fgColorStr = Integer.toHexString(fgColorPref)
+        //var bgColorStr = Integer.toHexString(bgColorPref)
+
+        mView!!.cursorSize = cursorSizePref * 9.0f
+        mView!!.iterations = iterationsPref
+        mView!!.fgColor = toRgb(fgColorPref)
+        mView!!.bgColor = toRgb(bgColorPref)
     }
 
     override fun onPause()
@@ -133,19 +157,21 @@ class MainActivity : Activity()
 
     override fun onTouchEvent(touchevent: MotionEvent): Boolean
     {
-        val x = touchevent.getX()
-        val y = touchevent.getY()
+        val x = touchevent.getX() * glScale
+        val y = touchevent.getY() * glScale
+
         when (touchevent.getAction()) {
             MotionEvent.ACTION_DOWN -> {
-                FluidLib.touch(true, x, y)
+                mView?.touch(true, x, y)
             }
             MotionEvent.ACTION_MOVE -> {
-                FluidLib.touch(true, x, y)
+                mView?.touch(true, x, y)
             }
             MotionEvent.ACTION_UP -> {
-                FluidLib.touch(false, x, y)
+                mView?.touch(false, x, y)
             }
         }
+
         return mGestureDetector?.onTouchEvent(touchevent) as Boolean
     }
 
@@ -166,8 +192,7 @@ class MainActivity : Activity()
         private val KEY_PREF_BG_COLOR = "pref_bg_color"
         private val KEY_PREF_ITERATIONS = "pref_iterations"
         private val KEY_PREF_CURSOR_SIZE = "pref_cursor_size"
-
-        internal var sAssetManager: AssetManager? = null
+        private val GL_SIZE = 1000.0f
     }
 }
 
